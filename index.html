@@ -30,15 +30,19 @@
       <!-- Site styles (load order matters) -->
       <link rel="stylesheet" href="assets/css/variables.css">
       <link rel="stylesheet" href="assets/css/base.css">
-      <link rel="stylesheet" href="assets/css/effects.css">
+      <link rel="stylesheet" href="assets/css/effects.css?v=cursor-pack-1">
       <link rel="stylesheet" href="assets/css/components.css">
       <link rel="stylesheet" href="assets/css/interactions.css">
       <link rel="stylesheet" href="assets/css/responsive.css">
-      <link rel="stylesheet" href="assets/css/premium.css?v=1080p-lite-1">
+      <link rel="stylesheet" href="assets/css/premium.css?v=cursor-pack-1">
 
       <!-- Theme setup before first paint -->
       <script>
           (function() {
+              const cursorStyles = ['orbit', 'crosshair', 'prism', 'comet'];
+              const savedCursor = localStorage.getItem('cursor_style') || 'orbit';
+              document.documentElement.dataset.cursorStyle = cursorStyles.includes(savedCursor) ? savedCursor : 'orbit';
+
               const applySavedTheme = function() {
                   const savedTheme = localStorage.getItem('user_theme') || 'default';
                   if (savedTheme !== 'default' && document.body) document.body.classList.add('theme-' + savedTheme);
@@ -298,6 +302,14 @@
                     <button type="button" class="theme-btn theme-ember-btn hover-target" onclick="setTheme('ember');SFX.click();" title="Ember Fury"><span>Ember</span></button>
                     <button type="button" class="theme-btn perf-btn hover-target premium-perf-toggle" id="manualPerfBtn" onclick="toggleManualPerf();SFX.click();" title="Performance Mode"><span>Performance</span></button>
                 </div>
+                <div class="settings-section-label cursor-settings-label">Cursor Design</div>
+                <div class="cursor-style-grid" role="group" aria-label="Cursor designs">
+                    <button type="button" class="cursor-style-btn active hover-target" data-cursor-style="orbit" onclick="setCursorStyle('orbit');SFX.click();" title="Orbit cursor" aria-label="Use Orbit cursor" aria-pressed="true"><span class="cursor-style-preview cursor-preview-orbit" aria-hidden="true"></span><span>Orbit</span></button>
+                    <button type="button" class="cursor-style-btn hover-target" data-cursor-style="crosshair" onclick="setCursorStyle('crosshair');SFX.click();" title="Crosshair cursor" aria-label="Use Crosshair cursor" aria-pressed="false"><span class="cursor-style-preview cursor-preview-crosshair" aria-hidden="true"></span><span>Crosshair</span></button>
+                    <button type="button" class="cursor-style-btn hover-target" data-cursor-style="prism" onclick="setCursorStyle('prism');SFX.click();" title="Prism cursor" aria-label="Use Prism cursor" aria-pressed="false"><span class="cursor-style-preview cursor-preview-prism" aria-hidden="true"></span><span>Prism</span></button>
+                    <button type="button" class="cursor-style-btn hover-target" data-cursor-style="comet" onclick="setCursorStyle('comet');SFX.click();" title="Comet cursor" aria-label="Use Comet cursor" aria-pressed="false"><span class="cursor-style-preview cursor-preview-comet" aria-hidden="true"></span><span>Comet</span></button>
+                </div>
+                <div id="cursorStatusText" class="cursor-style-status" aria-live="polite">ORBIT CURSOR</div>
                 <div id="perfStatusText" class="premium-settings-status">NORMAL MODE</div>
             </div>
         </div>
@@ -803,7 +815,7 @@
       <script src="assets/js/sfx.js"></script>
       <script src="assets/js/ui.js?v=top-settings-premium-1"></script>
       <script type="module" src="assets/js/firebase.js"></script>
-      <script src="assets/js/site-motion.js?v=1080p-lite-1"></script>
+      <script src="assets/js/site-motion.js?v=cursor-pack-1"></script>
 
   </body>
   </html>

@@ -511,6 +511,21 @@
         else if (theme === 'default') document.querySelector('.theme-default-btn')?.classList.add('active');
     };
 
+    const CURSOR_STYLES = ['orbit', 'crosshair', 'prism', 'comet'];
+    window.setCursorStyle = function(style) {
+        const nextStyle = CURSOR_STYLES.includes(style) ? style : 'orbit';
+        document.documentElement.dataset.cursorStyle = nextStyle;
+        localStorage.setItem('cursor_style', nextStyle);
+        document.querySelectorAll('.cursor-style-btn[data-cursor-style]').forEach(btn => {
+            const active = btn.dataset.cursorStyle === nextStyle;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
+        const status = document.getElementById('cursorStatusText');
+        if (status) status.textContent = nextStyle.toUpperCase() + ' CURSOR';
+    };
+    window.setCursorStyle(localStorage.getItem('cursor_style') || 'orbit');
+
     window.toggleManualPerf = function() {
         manualPerf = !manualPerf;
         document.body.classList.toggle('perf-mode', manualPerf);
@@ -2284,42 +2299,92 @@
     // ======================================================
     const cursorDot = document.getElementById("customCursor");
     const cursorRing = document.getElementById("cursorRing");
-    let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
     let ringX = mouseX, ringY = mouseY;
 
-    if (window.matchMedia("(pointer: fine)").matches) {
-        // Dot follows exactly, ring lags via RAF. Background parallax is handled once below.
-        document.addEventListener("mousemove", (e) => {
-            mouseX = e.clientX; mouseY = e.clientY;
-            if (cursorDot) { cursorDot.style.left = mouseX + "px"; cursorDot.style.top = mouseY + "px"; }
-        });
-        // Lag animation for ring
-        (function animRing() {
-            ringX += (mouseX - ringX) * 0.13;
-            ringY += (mouseY - ringY) * 0.13;
-            if (cursorRing) { cursorRing.style.left = ringX + "px"; cursorRing.style.top = ringY + "px"; }
-            requestAnimationFrame(animRing);
-        })();
-        // Click pulse
-        document.addEventListener('mousedown', () => {
-            if (cursorDot) cursorDot.classList.add('clicking');
-            if (cursorRing) cursorRing.classList.add('clicking');
-        });
-        document.addEventListener('mouseup', () => {
-            if (cursorDot) cursorDot.classList.remove('clicking');
-            if (cursorRing) cursorRing.classList.remove('clicking');
-        });
-        document.addEventListener('mouseover', e => {
-            if (e.target.closest('.hover-target') || e.target.classList.contains('hover-target')) {
-                if (cursorDot) cursorDot.classList.add('hover');
-                if (cursorRing) cursorRing.classList.add('hover');
-                SFX.hover();
+    if (window.matchMedia("(pointer: fine)").matches && cursorDot && cursorRing) {
+        let ringFrame = 0;
+        let cursorVisible = false;
+        const root = document.documentElement;
+
+        function setCursorPosition(el, x, y) {
+            el.style.setProperty('--cursor-x', x.toFixed(2) + 'px');
+            el.style.setProperty('--cursor-y', y.toFixed(2) + 'px');
+        }
+
+        function hideCursor() {
+            cursorVisible = false;
+            root.classList.remove('custom-cursor-ready');
+            cursorDot.classList.remove('hover', 'clicking');
+            cursorRing.classList.remove('hover', 'clicking');
+        }
+
+        function scheduleRingFrame() {
+            if (!ringFrame && !document.hidden) ringFrame = requestAnimationFrame(animateRing);
+        }
+
+        function animateRing() {
+            ringFrame = 0;
+            const dx = mouseX - ringX;
+            const dy = mouseY - ringY;
+            const ease = isLowEndMotionDevice() ? 0.2 : 0.15;
+            ringX += dx * ease;
+            ringY += dy * ease;
+            setCursorPosition(cursorRing, ringX, ringY);
+            if (Math.abs(dx) > 0.08 || Math.abs(dy) > 0.08) scheduleRingFrame();
+        }
+
+        document.addEventListener("pointermove", (e) => {
+            const dx = e.clientX - mouseX;
+            const dy = e.clientY - mouseY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            setCursorPosition(cursorDot, mouseX, mouseY);
+            if (!cursorVisible) {
+                cursorVisible = true;
+                ringX = mouseX;
+                ringY = mouseY;
+                setCursorPosition(cursorRing, ringX, ringY);
             }
+            if (Math.abs(dx) + Math.abs(dy) > 0.2) {
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI + 'deg';
+                cursorDot.style.setProperty('--cursor-angle', angle);
+                cursorRing.style.setProperty('--cursor-angle', angle);
+            }
+            root.classList.add('custom-cursor-ready');
+            scheduleRingFrame();
+        }, { passive: true });
+
+        document.addEventListener('pointerdown', () => {
+            cursorDot.classList.add('clicking');
+            cursorRing.classList.add('clicking');
         });
-        document.addEventListener('mouseout', e => {
-            if (e.target.closest('.hover-target') || e.target.classList.contains('hover-target')) {
-                if (cursorDot) cursorDot.classList.remove('hover');
-                if (cursorRing) cursorRing.classList.remove('hover');
+        document.addEventListener('pointerup', () => {
+            cursorDot.classList.remove('clicking');
+            cursorRing.classList.remove('clicking');
+        });
+
+        document.addEventListener('pointerover', e => {
+            const target = e.target.closest?.('.hover-target');
+            if (!target || (e.relatedTarget && target.contains(e.relatedTarget))) return;
+            cursorDot.classList.add('hover');
+            cursorRing.classList.add('hover');
+            SFX.hover();
+        });
+        document.addEventListener('pointerout', e => {
+            const target = e.target.closest?.('.hover-target');
+            if (!target || (e.relatedTarget && target.contains(e.relatedTarget))) return;
+            cursorDot.classList.remove('hover');
+            cursorRing.classList.remove('hover');
+        });
+
+        document.documentElement.addEventListener('pointerleave', hideCursor);
+        window.addEventListener('blur', hideCursor);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (ringFrame) cancelAnimationFrame(ringFrame);
+                ringFrame = 0;
+                hideCursor();
             }
         });
         // Card tilt is handled by the immersive engine below to avoid double transform writes.
@@ -2341,12 +2406,39 @@
         }
         cv.hidden = false;
         cv.style.display = 'block';
-        const ctx = cv.getContext('2d');
+        const ctx = cv.getContext('2d', { alpha: true, desynchronized: true });
         if (!ctx) return;
         const MAX = lowEnd ? 4 : (isMobile ? 6 : 18);
+        const frameMs = lowEnd ? 240 : (isMobile ? 100 : 0);
+        const bootLayer = document.getElementById('boot-canvas');
+        const loadingLayers = Array.from(document.querySelectorAll('.loading-screen'));
 
-        let W = 0, H = 0, paused = false, lastTs = 0, lastDrawTs = 0, resizeTimer = null;
+        let W = 0, H = 0, paused = document.hidden, lastTs = 0, resizeTimer = null;
+        let frameRequest = 0, wakeTimer = 0;
         let particles = [];
+
+        function coveredByTransition() {
+            return Boolean(bootLayer?.isConnected) || loadingLayers.some(layer => layer.classList.contains('active'));
+        }
+
+        function stopScheduler() {
+            if (frameRequest) cancelAnimationFrame(frameRequest);
+            if (wakeTimer) clearTimeout(wakeTimer);
+            frameRequest = 0;
+            wakeTimer = 0;
+        }
+
+        function scheduleDraw(delay = 0) {
+            if (paused || frameRequest || wakeTimer) return;
+            if (delay > 0) {
+                wakeTimer = setTimeout(() => {
+                    wakeTimer = 0;
+                    if (!paused) frameRequest = requestAnimationFrame(draw);
+                }, delay);
+                return;
+            }
+            frameRequest = requestAnimationFrame(draw);
+        }
 
         // ── Resize: match physical pixels for crisp rendering ──
         function resize() {
@@ -2368,7 +2460,8 @@
         document.addEventListener('visibilitychange', () => {
             paused = document.hidden;
             lastTs = 0;
-            lastDrawTs = 0;
+            if (paused) stopScheduler();
+            else scheduleDraw();
         });
 
         // ── Read CSS vars ──
@@ -2391,11 +2484,11 @@
         function getColors() {
             return [cssVar('--c-prim'), cssVar('--c-sec'), cssVar('--c-acc')];
         }
+        let palette = getColors();
 
         // ── Spawn ──
         function spawn(spreadY) {
-            const colors = getColors();
-            const color  = colors[Math.floor(Math.random() * colors.length)];
+            const color = palette[Math.floor(Math.random() * palette.length)];
             const maxLife = 9000 + Math.random() * 10000;
             return {
                 x:    Math.random() * W,
@@ -2416,16 +2509,15 @@
 
         // ── Draw loop ──
         function draw(ts) {
-            requestAnimationFrame(draw);
-            const hiddenBehindLoader =
-                document.getElementById('boot-canvas') ||
-                document.querySelector('.loading-screen.active');
-            if (paused || hiddenBehindLoader || document.body.classList.contains('perf-mode')) { lastTs = ts; return; }
-            const frameMs = lowEnd ? 240 : (isMobile ? 100 : 0);
-            if (frameMs && lastDrawTs && ts - lastDrawTs < frameMs) return;
+            frameRequest = 0;
+            if (paused) return;
+            if (coveredByTransition() || document.body.classList.contains('perf-mode')) {
+                lastTs = ts;
+                scheduleDraw(Math.max(frameMs, 240));
+                return;
+            }
             const dt = Math.min(ts - (lastTs || ts), 50); // cap at 50ms
             lastTs = ts;
-            lastDrawTs = ts;
 
             ctx.clearRect(0, 0, W, H);
 
@@ -2467,14 +2559,16 @@
                 ctx.fillStyle = toRgba(p.color, Math.min(alpha * 1.2, 1));
                 ctx.fill();
             }
+            scheduleDraw(frameMs);
         }
 
-        requestAnimationFrame(ts => { lastTs = ts; requestAnimationFrame(draw); });
+        scheduleDraw();
 
         // Refresh colors on theme change (mutation on :root vars via body class)
         new MutationObserver(() => {
+            palette = getColors();
             particles.forEach(p => {
-                const c = getColors(); p.color = c[Math.floor(Math.random() * c.length)];
+                p.color = palette[Math.floor(Math.random() * palette.length)];
             });
         }).observe(document.body, { attributeFilter: ['class'] });
     })();
@@ -2494,12 +2588,36 @@
     // ═══════════════════════════════════════════════════
     (function() {
         const isTouch = window.matchMedia('(pointer:coarse)').matches;
+        const pointerWrites = new WeakMap();
+
+        function queuePointerWrite(el, e, write) {
+            let state = pointerWrites.get(el);
+            if (!state) {
+                state = { x: 0, y: 0, frame: 0, write };
+                pointerWrites.set(el, state);
+            }
+            state.x = e.clientX;
+            state.y = e.clientY;
+            state.write = write;
+            if (state.frame) return;
+            state.frame = requestAnimationFrame(function() {
+                state.frame = 0;
+                state.write(state.x, state.y);
+            });
+        }
+
+        function clearPointerWrite(el, reset) {
+            const state = pointerWrites.get(el);
+            if (state?.frame) cancelAnimationFrame(state.frame);
+            pointerWrites.delete(el);
+            reset();
+        }
 
         // ── 1. CARD MOUSE-TRACKING 3D TILT ────────────────
-        function applyTilt(el, e, maxRot, tz) {
+        function applyTilt(el, clientX, clientY, maxRot, tz) {
             const r = el.getBoundingClientRect();
-            const dx = (e.clientX - (r.left + r.width  / 2)) / (r.width  / 2);
-            const dy = (e.clientY - (r.top  + r.height / 2)) / (r.height / 2);
+            const dx = (clientX - (r.left + r.width  / 2)) / (r.width  / 2);
+            const dy = (clientY - (r.top  + r.height / 2)) / (r.height / 2);
             el.style.transform =
                 `perspective(900px) rotateX(${(-dy * maxRot).toFixed(2)}deg) rotateY(${(dx * maxRot).toFixed(2)}deg) translateZ(${tz}px)`;
         }
@@ -2509,11 +2627,14 @@
             document.querySelectorAll('.card:not([data-tilt])').forEach(function(c) {
                 c.dataset.tilt = '1';
                 if (isTouch) return;
+                const writeTilt = function(x, y) { applyTilt(c, x, y, 9, 10); };
                 c.addEventListener('mousemove', function(e) {
                     if (document.body.classList.contains('perf-mode')) return;
-                    applyTilt(c, e, 9, 10);
+                    queuePointerWrite(c, e, writeTilt);
                 });
-                c.addEventListener('mouseleave', function() { resetTilt(c); });
+                c.addEventListener('mouseleave', function() {
+                    clearPointerWrite(c, function() { resetTilt(c); });
+                });
             });
         }
         attachCardTilt();
@@ -2522,25 +2643,31 @@
         if (!isTouch) {
             var av = document.querySelector('.hero-avatar');
             if (av) {
+                var writeAvatarTilt = function(x, y) { applyTilt(av, x, y, 18, 12); };
                 av.addEventListener('mousemove', function(e) {
-                    applyTilt(av, e, 18, 12);
+                    queuePointerWrite(av, e, writeAvatarTilt);
                 });
-                av.addEventListener('mouseleave', function() { resetTilt(av); });
+                av.addEventListener('mouseleave', function() {
+                    clearPointerWrite(av, function() { resetTilt(av); });
+                });
             }
         }
 
         // ── 3. MAGNETIC BUTTON ────────────────────────────
         if (!isTouch) {
-            function applyMag(btn, e) {
+            function applyMag(btn, clientX, clientY) {
                 var r = btn.getBoundingClientRect();
-                var dx = (e.clientX - (r.left + r.width  / 2)) * 0.14;
-                var dy = (e.clientY - (r.top  + r.height / 2)) * 0.14;
+                var dx = (clientX - (r.left + r.width  / 2)) * 0.14;
+                var dy = (clientY - (r.top  + r.height / 2)) * 0.14;
                 btn.style.transform =
                     `translateY(-6px) scale(1.03) translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px)`;
             }
             document.querySelectorAll('.btn').forEach(function(btn) {
-                btn.addEventListener('mousemove', function(e) { applyMag(btn, e); });
-                btn.addEventListener('mouseleave', function() { btn.style.transform = ''; });
+                var writeMag = function(x, y) { applyMag(btn, x, y); };
+                btn.addEventListener('mousemove', function(e) { queuePointerWrite(btn, e, writeMag); });
+                btn.addEventListener('mouseleave', function() {
+                    clearPointerWrite(btn, function() { btn.style.transform = ''; });
+                });
             });
         }
 
@@ -2611,25 +2738,20 @@
         }
 
         // ── 7. DATA CARD TILT ─────────────────────────────
-        if (!isTouch) {
-            function attachDataTilt() {
-                document.querySelectorAll('.data-card:not([data-tilt])').forEach(function(c) {
-                    c.dataset.tilt = '1';
-                    c.addEventListener('mousemove', function(e) {
-                        applyTilt(c, e, 5, 5);
-                    });
-                    c.addEventListener('mouseleave', function() { resetTilt(c); });
+        function attachDataTilt() {
+            if (isTouch) return;
+            document.querySelectorAll('.data-card:not([data-tilt])').forEach(function(c) {
+                c.dataset.tilt = '1';
+                var writeDataTilt = function(x, y) { applyTilt(c, x, y, 5, 5); };
+                c.addEventListener('mousemove', function(e) {
+                    queuePointerWrite(c, e, writeDataTilt);
                 });
-            }
-            attachDataTilt();
-
-            // ── 8. MutationObserver — attach tilt to dynamically added cards ──
-            new MutationObserver(function() {
-                attachCardTilt();
-                attachDataTilt();
-                injectSysCorners();
-            }).observe(document.body, { childList: true, subtree: true });
+                c.addEventListener('mouseleave', function() {
+                    clearPointerWrite(c, function() { resetTilt(c); });
+                });
+            });
         }
+        attachDataTilt();
 
         // ── 9. HUD CORNER BRACKET INJECTOR ────────────────
         var _sysCornerSelectors = [
@@ -2651,8 +2773,20 @@
             });
         }
         injectSysCorners();
-        new MutationObserver(function() {
-            injectSysCorners();
+        var immersiveRefreshFrame = 0;
+        new MutationObserver(function(records) {
+            var hasRelevantAdditions = records.some(function(record) {
+                return Array.from(record.addedNodes).some(function(node) {
+                    return node.nodeType === 1 && !node.classList.contains('sys-corner');
+                });
+            });
+            if (!hasRelevantAdditions || immersiveRefreshFrame) return;
+            immersiveRefreshFrame = requestAnimationFrame(function() {
+                immersiveRefreshFrame = 0;
+                attachCardTilt();
+                attachDataTilt();
+                injectSysCorners();
+            });
         }).observe(document.body, { childList: true, subtree: true });
 
     }());
