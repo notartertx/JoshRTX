@@ -1,0 +1,119 @@
+        .reveal { opacity:0; transform:translateY(50px); transition:all 0.8s ease-out; }
+        .reveal.active { opacity:1; transform:translateY(0); }
+
+        /* IMMERSIVE 3D & HOVER EFFECTS
+        ============================================ */
+
+        /* -- Card 3D tilt (will-change only) -- */
+        .ripple-burst {
+            position:absolute;
+            border-radius:50%;
+            background:radial-gradient(circle, rgba(var(--c-prim-rgb),0.45) 0%, transparent 70%);
+            transform:scale(0);
+            animation:rippleOut 0.65s ease-out forwards;
+            pointer-events:none;
+            z-index:9999;
+        }
+        @keyframes rippleOut {
+            to { transform:scale(4); opacity:0; }
+        }
+
+        /* -- Magnetic btn enhanced hover -- */
+        /* SYSTEM-STYLE UI BOXES
+        ============================================ */
+
+        /* HUD corner brackets — injected into all system panels */
+        .sys-corner {
+            position:absolute;
+            width:11px; height:11px;
+            pointer-events:none;
+            z-index:20;
+            transition:border-color 0.3s ease, width 0.3s ease, height 0.3s ease;
+        }
+        .sys-corner-tl { top:0; left:0;   border-top:2px solid rgba(var(--c-prim-rgb),0.6); border-left:2px solid rgba(var(--c-prim-rgb),0.6); }
+        .sys-corner-tr { top:0; right:0;  border-top:2px solid rgba(var(--c-prim-rgb),0.6); border-right:2px solid rgba(var(--c-prim-rgb),0.6); }
+        .sys-corner-bl { bottom:0; left:0;  border-bottom:2px solid rgba(var(--c-sec-rgb),0.45); border-left:2px solid rgba(var(--c-sec-rgb),0.45); }
+        .sys-corner-br { bottom:0; right:0; border-bottom:2px solid rgba(var(--c-sec-rgb),0.45); border-right:2px solid rgba(var(--c-sec-rgb),0.45); }
+        /* Light up on parent hover */
+        .card:hover .sys-corner-tl,
+        .card:hover .sys-corner-tr { border-color:var(--c-prim); width:16px; height:16px; }
+        .card:hover .sys-corner-bl,
+        .card:hover .sys-corner-br { border-color:var(--c-sec); width:16px; height:16px; }
+        .hero-stats:hover .sys-corner-tl,
+        .hero-stats:hover .sys-corner-tr { border-color:var(--c-prim); width:15px; height:15px; }
+        .hero-stats:hover .sys-corner-bl,
+        .hero-stats:hover .sys-corner-br { border-color:var(--c-sec); width:15px; height:15px; }
+        .modal-box:hover .sys-corner-tl,
+        .modal-box:hover .sys-corner-tr { border-color:var(--c-prim); width:16px; height:16px; }
+
+        /* Hero stats — sharp system panel */
+        .hero-stats {
+            border-radius:2px;
+            border:1px solid rgba(var(--c-prim-rgb),0.28);
+            border-top:2px solid rgba(var(--c-prim-rgb),0.65);
+            position:relative;
+            background-image:linear-gradient(rgba(var(--c-prim-rgb),0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--c-prim-rgb),0.018) 1px,transparent 1px);
+            background-size:40px 40px;
+        }
+
+        /* Update logs — terminal panel */
+        .feedback-box .sys-corner-tl,
+        .feedback-box .sys-corner-tr {
+            border-top-color: rgba(245,158,11,0.7) !important;
+        }
+        .feedback-box .sys-corner-tl { border-left-color: rgba(245,158,11,0.7) !important; }
+        .feedback-box .sys-corner-tr { border-right-color: rgba(245,158,11,0.7) !important; }
+        .feedback-box .sys-corner-bl,
+        .feedback-box .sys-corner-br {
+            border-bottom-color: rgba(245,158,11,0.45) !important;
+        }
+        .feedback-box .sys-corner-bl { border-left-color: rgba(245,158,11,0.45) !important; }
+        .feedback-box .sys-corner-br { border-right-color: rgba(245,158,11,0.45) !important; }
+        .feedback-box:hover .sys-corner-tl,
+        .feedback-box:hover .sys-corner-tr,
+        .feedback-box:hover .sys-corner-bl,
+        .feedback-box:hover .sys-corner-br {
+            border-color: #f59e0b !important;
+            width: 16px !important; height: 16px !important;
+        }
+
+        #adminSelectionModal .sys-corner-tl,
+        #adminSelectionModal .sys-corner-tr {
+            border-top-color: rgba(245,158,11,0.7) !important;
+        }
+        #adminSelectionModal .sys-corner-tl { border-left-color: rgba(245,158,11,0.7) !important; }
+        #adminSelectionModal .sys-corner-tr { border-right-color: rgba(245,158,11,0.7) !important; }
+        #adminSelectionModal .sys-corner-bl,
+        #adminSelectionModal .sys-corner-br {
+            border-bottom-color: rgba(245,158,11,0.45) !important;
+        }
+        #adminSelectionModal .sys-corner-bl { border-left-color: rgba(245,158,11,0.45) !important; }
+        #adminSelectionModal .sys-corner-br { border-right-color: rgba(245,158,11,0.45) !important; }
+        #adminSelectionModal:hover .sys-corner-tl,
+        #adminSelectionModal:hover .sys-corner-tr,
+        #adminSelectionModal:hover .sys-corner-bl,
+        #adminSelectionModal:hover .sys-corner-br {
+            border-color: #f59e0b !important;
+            width: 16px !important; height: 16px !important;
+        }
+        /* Scan line on SYSTEM_ROOT header */
+        #adminSelectionModal .modal-box::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.8), transparent);
+            animation: sysRootScan 3s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes sysRootScan {
+            0%   { opacity: 0; transform: scaleX(0.3); }
+            30%  { opacity: 1; }
+            70%  { opacity: 1; }
+            100% { opacity: 0; transform: scaleX(1.2); }
+        }
+
+        /* Touch ripple feedback on interactive elements */
+            /* HUD corners bigger on mobile for visibility */
+            .hud-corner { width: 20px; height: 20px; }
+            /* Cards: slightly less padding, fully rounded edges */

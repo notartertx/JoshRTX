@@ -1,0 +1,123 @@
+        @media (pointer:coarse) { .cursor-dot,.cursor-ring{display:none!important} }
+
+        @media (min-width:769px) { .hide-desktop-active { display:none !important; } }
+        @media (max-width:768px) {
+            .hide-mobile-active { display:none !important; }
+            /* Admin grid — single column, no span overflow */
+            .admin-grid-menu { grid-template-columns:1fr; gap:10px; }
+            .admin-grid-menu button { grid-column:span 1 !important; }
+            /* Top bar — allow wrapping, give proper spacing */
+            .top-controls-bar { padding:12px 12px 0 12px; flex-wrap:nowrap; gap:8px; align-items:center; overflow:visible; }
+            /* Hide inline theme dots on mobile — they're in the settings panel */
+            .inline-theme-bar { display:none !important; }
+            #leftTopControls { flex-wrap:nowrap; gap:8px; align-items:center; overflow:visible; flex-shrink:1; min-width:0; }
+        }
+        @media (pointer:coarse) { *{cursor:auto !important} .custom-cursor{display:none !important} .card:hover{transform:translateY(-4px) !important} }
+
+        .hide-user-active { display:none !important; }
+        .dash-window { transform:translateY(120vh) scale(0.8) rotateX(20deg); opacity:0; transition:all 0.8s cubic-bezier(0.25,1,0.5,1); display:flex; flex-direction:column; max-height:85vh; }
+        #adminDashboardScreen.active .dash-window { transform:translateY(0) scale(1) rotateX(0deg); opacity:1; box-shadow:0 0 50px rgba(var(--c-acc-rgb),0.2),inset 0 0 30px rgba(var(--c-acc-rgb),0.1); }
+        .dash-content { display:flex; flex-direction:row; flex:1; overflow:hidden; padding-top:45px; }
+        .dash-col { flex:1; padding:25px; display:flex; flex-direction:column; }
+        .dash-scroll-area { overflow-y:auto; display:flex; flex-direction:column; gap:15px; padding-right:10px; max-height:250px; }
+        .dash-scroll-area::-webkit-scrollbar { width:6px; display:block; }
+        .dash-scroll-area::-webkit-scrollbar-track { background:rgba(0,15,10,0.5); border-radius:4px; }
+        .dash-scroll-area::-webkit-scrollbar-thumb { background:var(--c-prim); border-radius:4px; box-shadow:0 0 10px rgba(var(--c-prim-rgb),0.5); }
+        #dashFeedbackContainer::-webkit-scrollbar-thumb { background:#f59e0b; box-shadow:0 0 10px rgba(245,158,11,0.5); }
+        .data-card { background:var(--card-bg); border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:6px; position:relative; flex-shrink:0; animation:slideUpLog 0.4s ease-out forwards; opacity:0; transform:translateY(20px); }
+        .data-card.msg { border-left:3px solid var(--c-prim); }
+        .data-card.fb { border-left:3px solid #f59e0b; }
+        .data-card span.time { color:#a1a1aa; font-size:0.75rem; float:right; }
+        .save-toast { position:fixed; top:20px; right:20px; padding:15px 25px; border-radius:8px; z-index:100000; font-family:monospace; font-weight:bold; opacity:0; pointer-events:none; transition:0.3s cubic-bezier(0.2,0.8,0.2,1); transform:translateY(-20px); box-shadow:0 0 20px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:5px; }
+        .save-toast.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+        .save-toast.loading { background:rgba(245,158,11,0.9); border:1px solid #f59e0b; color:#000; }
+        .save-toast.success { background:rgba(34,197,94,0.9); border:1px solid #22c55e; color:#000; }
+        .save-toast.error { background:rgba(239,68,68,0.9); border:1px solid #ef4444; color:#fff; }
+
+        @media (max-width:768px) {
+            .dash-window { max-height:90vh; }
+            .dash-content { flex-direction:column; overflow-y:auto; }
+            .dash-col { padding:15px; border-right:none; border-bottom:1px solid rgba(var(--c-prim-rgb),0.3); flex:none; }
+        }
+
+        /* Feedback button — touch position fix */
+        @media (pointer: coarse) {
+            #section-feedback,
+            #section-feedback:hover,
+            #section-feedback:active,
+            #section-feedback:focus {
+                right: 15px !important;
+                left: auto !important;
+                bottom: 20px !important;
+                transform: none !important;
+                transition: opacity 0.8s ease 1s, background 0.3s !important;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           GLOBAL ATMOSPHERE — MAIN WEB IMMERSIVENESS
+        ═══════════════════════════════════════════════════════════ */
+
+        /* Scanlines — rendered on a canvas-z layer ABOVE bg, BELOW content */
+        #scanlineOverlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px, transparent 3px,
+                rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+            );
+            opacity: 0.35;
+        }
+        /* Vignette - same layer, also ABOVE bg BELOW content */
+        #vignetteOverlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background: radial-gradient(ellipse at 50% 35%, transparent 45%, rgba(0,0,0,0.35) 100%);
+        }
+
+        /* Ambient section header glow line */
+        .section-header { position: relative; }
+        .section-header::after {
+            content: '';
+            position: absolute; bottom: -8px; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--c-prim), transparent);
+            opacity: 0.5;
+            animation: headerLineGlow 4s ease-in-out infinite alternate;
+        }
+        @keyframes headerLineGlow {
+            0%  { opacity:0.2; transform: scaleX(0.6); }
+            100%{ opacity:0.7; transform: scaleX(1); }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           MOBILE IMMERSIVENESS & TOUCH POLISH
+        ═══════════════════════════════════════════════════════════ */
+
+        @media (max-width: 768px) {
+            /* The name badge / hero title more readable on small screens */
+            .hero h1 { font-size: clamp(2.8rem, 12vw, 5rem); }
+            .hero p { font-size: 1rem; }
+            /* Stats row sizing is handled by premium.css so it stays stable. */
+            .hero-stats { min-width: 0; }
+            #main-view { -webkit-overflow-scrolling: touch; }
+            /* Bounce-free overscroll color match */
+            html { overscroll-behavior-y: none; background: var(--bg-color); }
+            /* HUD corners bigger on mobile for visibility */
+            .hud-corner { width: 20px; height: 20px; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           PERFORMANCE — GPU layers, paint containment, high-Hz
+        ═══════════════════════════════════════════════════════════ */
+
+        /* Force GPU composite layers on all continuously-animated elements */
+        .bg, .tech-grid, .glow-core, #particleCanvas {
+            will-change: transform, opacity;
+        }
+
+        /* Prevent layout recalc from overlay elements affecting layout */
+        #scanlineOverlay, #vignetteOverlay { will-change: auto; }
+
+        /* Reduce repaint for frequently-toggled elements */
+        @media (max-width: 768px) {
+            .primary-beam, .secondary-beam { animation-duration: 40s !important; }
+        }

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+      <title>JoshRTX</title>
+
+      <!-- Device profile before first paint -->
+      <script>
+          (function() {
+              const root = document.documentElement;
+              const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+              const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+              const mem = Number(navigator.deviceMemory || 8);
+              const cores = Number(navigator.hardwareConcurrency || 8);
+              const dpr = window.devicePixelRatio || 1;
+              const width = window.innerWidth || screen.width || 999;
+              const height = window.innerHeight || screen.height || 999;
+              const shortSide = Math.min(width, height);
+              const mobile = coarse || width <= 768;
+              const lowEnd = reduced || (mobile && (mem <= 4 || cores <= 4 || (shortSide <= 430 && dpr >= 2.25)));
+              if (mobile) root.classList.add('mobile-optimized-device');
+              if (lowEnd) root.classList.add('low-end-device');
+          })();
+      </script>
+
+      <!-- Fonts -->
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Playfair+Display:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+
+      <!-- Site styles (load order matters) -->
+      <link rel="stylesheet" href="assets/css/variables.css">
+      <link rel="stylesheet" href="assets/css/base.css">
+      <link rel="stylesheet" href="assets/css/effects.css">
+      <link rel="stylesheet" href="assets/css/components.css">
+      <link rel="stylesheet" href="assets/css/interactions.css">
+      <link rel="stylesheet" href="assets/css/responsive.css">
+      <link rel="stylesheet" href="assets/css/premium.css?v=1080p-lite-1">
+
+      <!-- Theme setup before first paint -->
+      <script>
+          (function() {
+              const applySavedTheme = function() {
+                  const savedTheme = localStorage.getItem('user_theme') || 'default';
+                  if (savedTheme !== 'default' && document.body) document.body.classList.add('theme-' + savedTheme);
+              };
+              if (document.body) applySavedTheme();
+              else document.addEventListener('DOMContentLoaded', applySavedTheme, { once: true });
+          })();
+      </script>
+  </head>
+  <body>
+
+  <div id="saveToast" class="save-toast"></div>
+
+
+
+<!-- Click-to-start overlay for browser audio unlock -->
+<div id="init-overlay">
+    <div class="intro-ambient intro-ambient-a"></div>
+    <div class="intro-ambient intro-ambient-b"></div>
+    <div class="intro-ambient intro-ambient-c"></div>
+    <div class="intro-frame">
+        <span class="intro-corner tl"></span>
+        <span class="intro-corner tr"></span>
+        <span class="intro-corner bl"></span>
+        <span class="intro-corner br"></span>
+    </div>
+    <div class="intro-status">
+        <span id="introStatus1Text">JoshRTX v4.2</span>
+        <span id="introStatus2Text">Portfolio ready</span>
+        <span id="introStatus3Text">Sound unlock</span>
+    </div>
+    <div class="intro-card">
+        <div class="intro-eyebrow" id="introEyebrowText">Personal webspace</div>
+        <div class="intro-logo-row">
+            <span class="intro-logo-mark" id="introLogoMarkText">JR</span>
+            <span class="intro-logo-text" id="introLogoTitleText">JoshRTX</span>
+        </div>
+        <div class="intro-subcopy" id="introSubcopyText">Projects, games, notes, and experiments</div>
+        <div class="intro-specs">
+            <span id="introSpec1Text">HTML/CSS</span>
+            <span id="introSpec2Text">JavaScript</span>
+            <span id="introSpec3Text">Roblox Studio</span>
+        </div>
+        <div class="intro-enter">
+            <span class="intro-enter-line"></span>
+            <span id="introEnterText">Tap to launch</span>
+            <span class="intro-enter-line"></span>
+        </div>
+    </div>
+    <div class="intro-footer" id="introFooterText">Built by Josh // personal site</div>
+</div>
+
+<!-- FULL-SCREEN BOOT CANVAS -->
+<canvas id="boot-canvas"></canvas>
+<div id="subtext"></div>
+<div id="transition-glow"></div>
+
+<div id="adminAuthTransition" class="loading-screen premium-loader-screen admin-auth-loader">
+    <div class="premium-loader-shell">
+        <div class="premium-loader-visual">
+            <div class="premium-loader-orbit">
+                <span></span><span></span><span></span>
+                <div class="premium-loader-mark">JR</div>
+            </div>
+            <div class="premium-loader-sparks"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="premium-loader-copy">
+            <div class="premium-loader-kicker">ROOT ACCESS</div>
+            <div class="premium-loader-title">Admin Gate</div>
+            <div id="adminAuthText" class="premium-loader-status" data-loader-status>Checking login...</div>
+            <div class="premium-meter"><div id="adminAuthBar" class="premium-meter-fill" data-loader-fill></div></div>
+            <div class="premium-loader-meta">
+                <span id="adminAuthStep" data-loader-step>STANDBY</span>
+                <span id="adminAuthPct" data-loader-pct>00%</span>
+            </div>
+        </div>
+        <div class="terminal-window premium-loader-terminal" id="adminAuthTermWindow">
+            <div class="terminal-grid"></div>
+            <div class="window-header"><span>ROOT_HANDSHAKE</span><span id="adminAuthHeaderStatus"> [LOCKED]</span></div>
+            <div class="terminal-output" id="adminAuthOutput"></div>
+        </div>
+    </div>
+</div>
+
+<div class="glitch-overlay"></div>
+<div id="crtNoiseOverlay"></div>
+<div class="cursor-dot" id="customCursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<div id="namePrompt" class="name-prompt-overlay">
+    <div class="name-box">
+        <h2>Identification</h2>
+        <p>Enter your name or nickname.</p>
+        <form onsubmit="processName(event)">
+            <input type="text" id="guestNameInput" class="name-input hover-target" placeholder="Your name..." autocomplete="off">
+            <button type="submit" class="btn hover-target" style="margin-top:0;padding:12px 30px;font-size:1rem;">Initiate</button>
+        </form>
+    </div>
+</div>
+
+<div id="loadingScreen" class="loading-screen premium-loader-screen enter-loader">
+    <div class="premium-loader-shell">
+        <div class="premium-loader-visual">
+            <div class="loader-core premium-core" id="loginSpinner">
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-text-center" id="loginSpinnerText">
+                    <span>JR</span><span>AUTH</span>
+                </div>
+            </div>
+            <div class="premium-loader-sparks"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="premium-loader-copy">
+            <div class="premium-loader-kicker">SESSION HANDOFF</div>
+            <div class="premium-loader-title">Opening JoshRTX</div>
+            <div class="premium-loader-status" data-loader-status>Standing by...</div>
+            <div class="premium-meter"><div id="loadBar" class="load-bar premium-meter-fill" data-loader-fill></div></div>
+            <div class="premium-loader-meta">
+                <span data-loader-step>READY</span>
+                <span data-loader-pct>00%</span>
+            </div>
+        </div>
+        <div class="terminal-window premium-loader-terminal" id="loginTermWindow">
+            <div class="terminal-grid"></div>
+            <div class="window-header" id="loginHeader">
+                <span id="loginHeaderText">SIGN_IN_FLOW_V4.2</span><span id="loginHeaderStatus"> </span>
+            </div>
+            <div class="terminal-output" id="terminalOutput"></div>
+        </div>
+    </div>
+</div>
+
+<div id="shutdownScreen" class="loading-screen premium-loader-screen shutdown-mode" style="z-index:10000;">
+    <div class="premium-loader-shell">
+        <div class="premium-loader-visual">
+            <div class="loader-core premium-core" id="shutdownSpinner">
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-ring"></div>
+                <div class="loader-text-center"><span>JR</span><span>HALT</span></div>
+            </div>
+            <div class="premium-loader-sparks"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="premium-loader-copy">
+            <div class="premium-loader-kicker">SESSION CLOSE</div>
+            <div class="premium-loader-title">Powering Down</div>
+            <div class="premium-loader-status" data-loader-status>Preparing shutdown...</div>
+            <div class="premium-meter"><div id="shutdownLoadBar" class="premium-meter-fill" data-loader-fill></div></div>
+            <div class="premium-loader-meta">
+                <span data-loader-step>ONLINE</span>
+                <span data-loader-pct>00%</span>
+            </div>
+        </div>
+        <div class="terminal-window premium-loader-terminal" id="shutdownTermWindow">
+            <div class="terminal-grid"></div>
+            <div class="window-header"><span>SYSTEM_TERMINATING</span><span id="shutdownHeaderStatus"> [ACTIVE]</span></div>
+            <div class="terminal-output" id="shutdownOutput"></div>
+        </div>
+    </div>
+    <div id="crtLine"></div>
+</div>
+
+<div class="bg" id="parallaxBg">
+    <div class="tech-grid"></div>
+    <div class="glow-core primary-beam"></div>
+    <div class="glow-core secondary-beam"></div>
+    <div class="glow-core tertiary-beam"></div>
+    <div class="glow-core quaternary-beam"></div>
+    <div class="nebula-orb nebula-1"></div>
+    <div class="nebula-orb nebula-2"></div>
+    <div class="nebula-orb nebula-3"></div>
+    <canvas id="particleCanvas"></canvas>
+</div>
+<div id="scanlineOverlay"></div>
+<div id="vignetteOverlay"></div>
+
+<div id="login-view">
+    <section class="hero">
+        <div class="hero-hud">
+            <div class="hud-corner tl"></div>
+            <div class="hud-corner tr"></div>
+            <div class="hud-corner bl"></div>
+            <div class="hud-corner br"></div>
+        </div>
+        <div class="hero-scan-line"></div>
+        <div class="hero-id-tag">> PERSONAL_BUILD // JOSHRTX_v4.2</div>
+        <div class="hero-avatar">
+            <div class="avatar-glow"></div>
+            <div class="avatar-rings">
+                <div class="avatar-ring r1"></div>
+                <div class="avatar-ring r2"></div>
+                <div class="avatar-ring r3"></div>
+            </div>
+            <div class="avatar-core">JR</div>
+            <div class="avatar-scan"></div>
+        </div>
+        <h1 id="title">JoshRTX</h1>
+        <div class="hero-tags">
+            <span class="htag">BSIT Student</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Gamer</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Frontend Learner</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Learning Developer</span>
+        </div>
+        <div class="hero-stats">
+            <div class="hstat"><span class="hstat-val">2</span><span class="hstat-lbl">Projects</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val">1+</span><span class="hstat-lbl">Coding</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val">BSIT</span><span class="hstat-lbl">Course</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val" id="heroUptime">0s</span><span class="hstat-lbl">Uptime</span></div>
+        </div>
+        <button class="btn hover-target" id="enterBtn" onclick="showNamePrompt()">Enter Site</button>
+        <div class="hero-skills">
+            <span class="skill-badge">HTML/CSS</span>
+            <span class="skill-badge">JavaScript</span>
+            <span class="skill-badge">Game Dev</span>
+            <span class="skill-badge">Roblox Studio</span>
+            <span class="skill-badge">UI/UX</span>
+            <span class="skill-badge">Web Design</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="update-logs">
+            <h3><span>>></span> Build Notes</h3>
+            <div class="log-entries" id="changelogFeed"><p style="color:#52525b;font-style:italic;">Loading build notes...</p></div>
+        </div>
+    </section>
+</div>
+
+  <div id="main-view">
+    <div class="top-controls-bar premium-top-controls">
+        <div id="leftTopControls" class="premium-control-cluster">
+            <button class="sys-settings-btn premium-icon-btn hover-target reveal" onclick="toggleSettings('settingsPanel');SFX.click();" style="transition-delay:0.1s;" title="Open settings" aria-label="Open settings">SET</button>
+            <button class="sys-settings-btn premium-icon-btn hover-target reveal" id="muteBtn" onclick="SFX.toggleMute();" style="transition-delay:0.13s;" title="Audio mute" aria-label="Toggle audio">SND</button>
+
+            <div id="settingsPanel" class="settings-panel left-align premium-settings-panel">
+                <div class="settings-panel-head">
+                    <span class="settings-panel-mark">JR</span>
+                    <div>
+                        <div class="settings-kicker">Interface</div>
+                        <h4>Theme Settings</h4>
+                    </div>
+                </div>
+                <div class="settings-section-label">Color Combination</div>
+                <div class="theme-switcher-inline premium-theme-grid" aria-label="Theme color combinations">
+                    <button type="button" class="theme-btn theme-default-btn active hover-target" onclick="setTheme('default');SFX.click();" title="System Default"><span>Default</span></button>
+                    <button type="button" class="theme-btn theme-red-btn hover-target" onclick="setTheme('red');SFX.click();" title="Red Protocol"><span>Red</span></button>
+                    <button type="button" class="theme-btn theme-blue-btn hover-target" onclick="setTheme('blue');SFX.click();" title="Deep Blue"><span>Blue</span></button>
+                    <button type="button" class="theme-btn theme-purple-btn hover-target" onclick="setTheme('purple');SFX.click();" title="Purple Nexus"><span>Purple</span></button>
+                    <button type="button" class="theme-btn theme-carl-btn hover-target" onclick="setTheme('carl');SFX.click();" title="Carl Pink"><span>Pink</span></button>
+                    <button type="button" class="theme-btn theme-neon-btn hover-target" onclick="setTheme('neon');SFX.click();" title="Neon Acid"><span>Neon</span></button>
+                    <button type="button" class="theme-btn theme-ocean-btn hover-target" onclick="setTheme('ocean');SFX.click();" title="Matrix Green"><span>Matrix</span></button>
+                    <button type="button" class="theme-btn theme-ember-btn hover-target" onclick="setTheme('ember');SFX.click();" title="Ember Fury"><span>Ember</span></button>
+                    <button type="button" class="theme-btn perf-btn hover-target premium-perf-toggle" id="manualPerfBtn" onclick="toggleManualPerf();SFX.click();" title="Performance Mode"><span>Performance</span></button>
+                </div>
+                <div id="perfStatusText" class="premium-settings-status">NORMAL MODE</div>
+            </div>
+        </div>
+        <div class="premium-status-wrap">
+            <button class="compact-status premium-clock-btn hover-target reveal" onclick="toggleSettings('statusDropdown');SFX.click();" style="transition-delay:0.2s;" aria-label="Open status">
+                <span id="compactNetDot" class="status-icon premium-status-dot"></span>
+                <span class="clock-copy">
+                    <span class="clock-label">Local Time</span>
+                    <span id="compactStatusText" class="clock-time">--:--</span>
+                </span>
+            </button>
+            <div id="statusDropdown" class="settings-panel right-align premium-status-panel">
+                <div class="settings-panel-head">
+                    <span class="settings-panel-mark status">OK</span>
+                    <div>
+                        <div class="settings-kicker">System</div>
+                        <h4>Status Clock</h4>
+                    </div>
+                </div>
+                <div class="status-row"><span>Time</span><strong id="ddTime">Time: --:--</strong></div>
+                <div class="status-row"><span>Network</span><strong id="ddNet">Net: ONLINE</strong></div>
+                <div class="status-row"><span>Location</span><strong id="ddLoc">Loc: ACQUIRING...</strong></div>
+                <div class="status-row save"><span>Last Save</span><strong id="ddSave">Last Save: Pending</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ticker-wrap reveal">
+        <div class="ticker">
+            <div class="ticker-item">HTML / CSS <span>✦</span> JAVASCRIPT <span>✦</span> GAME DEV <span>✦</span> ROBLOX STUDIO <span>✦</span> UI / UX <span>✦</span> WEB DESIGN <span>✦</span></div>
+            <div class="ticker-item">HTML / CSS <span>✦</span> JAVASCRIPT <span>✦</span> GAME DEV <span>✦</span> ROBLOX STUDIO <span>✦</span> UI / UX <span>✦</span> WEB DESIGN <span>✦</span></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="custom-ui-grid"></div>
+    </div>
+
+    <div id="hidden-cms-storage" style="display:none;"></div>
+    <footer onclick="triggerAdmin()" class="hover-target">© 2026 JoshRTX // Personal site</footer>
+    <button class="floating-feedback hover-target" id="section-feedback" onclick="openFeedbackModal();SFX.click();" style="opacity:0;transition:opacity 0.8s ease 1s,background 0.3s,transform 0.3s,box-shadow 0.3s;">
+        <span class="icon"></span> SEND FEEDBACK
+    </button>
+</div>
+
+<div id="uiBuilderToolbar" class="ui-builder-toolbar">
+    <div style="display:flex;width:100%;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+            <span style="color:#f59e0b;font-family:monospace;font-weight:bold;">UI_BUILDER</span>
+            <span id="selectedElDisplay" style="color:#d1fae5;font-family:monospace;background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:4px;font-size:0.85rem;">Selected: None</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="builder-btn hover-target" id="btnUndoReset" onclick="undoUIReset()" style="display:none;border-color:#8b5cf6;color:#8b5cf6;">↶ UNDO</button>
+            <button class="builder-btn hover-target" id="uiLockBtn" onclick="toggleUILock()">[🔓 UNLOCKED]</button>
+            <button class="builder-btn hover-target" onclick="promptUIReset()" style="border-color:#ef4444;color:#ef4444;">RESET</button>
+            <button class="builder-btn hover-target" onclick="saveUIBuilder()" style="background:#f59e0b;color:#000;">💾 SAVE UI</button>
+            <button class="builder-btn hover-target" onclick="closeUIBuilder()">EXIT</button>
+        </div>
+    </div>
+    <div id="selectionControls" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;border-top:1px solid rgba(245,158,11,0.3);padding-top:10px;">
+        <button class="builder-btn hover-target" onclick="promptInsertPosition()" style="border-color:#22c55e;color:#22c55e;">➕ ADD ELEMENT</button>
+        <div id="dynamicControls" style="display:none;gap:10px;flex-wrap:wrap;justify-content:center;">
+            <button class="builder-btn hover-target" onclick="editSelectedElement()">✏️ EDIT</button>
+            <button class="builder-btn hover-target" onclick="duplicateSelectedElement()">📋 DUP</button>
+            <button class="builder-btn hover-target" onclick="moveSelectedUp()">⬆️ UP</button>
+            <button class="builder-btn hover-target" onclick="moveSelectedDown()">⬇️ DOWN</button>
+            <button class="builder-btn hover-target" onclick="deleteSelectedElement()" style="border-color:#ef4444;color:#ef4444;">🗑️ DEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="resetConfirmModal" class="modal">
+    <div class="modal-box admin-modal-box">
+        <span class="close hover-target" onclick="closeResetModal()" style="color:#ef4444;">×</span>
+        <h2 style="color:#ef4444;font-weight:900;margin-bottom:10px;font-family:monospace;">⚠️ RESTORE DEFAULT LAYOUT?</h2>
+        <p style="color:#a1a1aa;font-family:monospace;font-size:0.9rem;margin-bottom:20px;">This will remove all builder-created elements and restore the original JoshRTX layout.</p>
+        <div class="admin-grid-menu" style="display:flex;gap:10px;">
+            <button class="hover-target" onclick="closeResetModal()" style="border-color:#a1a1aa;color:#a1a1aa;background:rgba(161,161,170,0.1);">CANCEL</button>
+            <button class="hover-target" onclick="executeUIReset()" style="border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,0.1);">RESTORE</button>
+        </div>
+    </div>
+</div>
+
+<div id="insertPositionModal" class="modal">
+    <div class="modal-box admin-modal-box">
+        <span class="close hover-target" onclick="document.getElementById('insertPositionModal').classList.remove('show');showToolbarForModal();" style="color:#f59e0b;">×</span>
+        <h2 style="color:#f59e0b;font-weight:900;margin-bottom:20px;font-family:monospace;">INSERT POSITION</h2>
+        <div class="admin-grid-menu" style="display:flex;gap:10px;">
+            <button class="hover-target" onclick="setInsertPosition('above')">⬆️ ADD ABOVE</button>
+            <button class="hover-target" onclick="setInsertPosition('below')">⬇️ ADD BELOW</button>
+        </div>
+    </div>
+</div>
+
+<div id="elementTypeModal" class="modal">
+    <div class="modal-box admin-modal-box">
+        <span class="close hover-target" onclick="document.getElementById('elementTypeModal').classList.remove('show');showToolbarForModal();" style="color:#f59e0b;">×</span>
+        <h2 style="color:#f59e0b;font-weight:900;margin-bottom:20px;font-family:monospace;">SELECT ELEMENT TYPE</h2>
+        <div class="admin-grid-menu">
+            <button class="hover-target" onclick="insertNewElement('card')">🃏 Card</button>
+            <button class="hover-target" onclick="insertNewElement('text')">📝 Text Block</button>
+            <button class="hover-target" onclick="insertNewElement('button')">🔘 Button</button>
+            <button class="hover-target" onclick="insertNewElement('image')">🖼️ Image</button>
+            <button class="hover-target" onclick="insertNewElement('audio')">🎵 Audio Player</button>
+            <button class="hover-target" onclick="insertNewElement('video')">▶️ Video Player</button>
+            <button class="hover-target" onclick="insertNewElement('divider')">➖ Divider</button>
+            <button class="hover-target" onclick="insertNewElement('notice')">⚠️ Notice Panel</button>
+            <button class="hover-target" onclick="insertNewElement('status')">🟢 Status Widget</button>
+            <button class="hover-target" onclick="insertNewElement('portfolio-brief')">▣ Portfolio Brief</button>
+            <button class="hover-target" onclick="insertNewElement('portfolio-snapshot')">▦ Snapshot Cards</button>
+            <button class="hover-target" onclick="insertNewElement('portfolio-focus')">▤ Focus Panel</button>
+            <button class="hover-target" onclick="insertNewElement('skill-matrix')">▥ Skill Matrix</button>
+            <button class="hover-target" onclick="insertNewElement('quick')">⚡ Quick Access</button>
+        </div>
+    </div>
+</div>
+
+<div id="elementEditorModal" class="modal">
+    <div class="modal-box admin-modal-box" style="text-align:left;max-width:720px !important;max-height:88vh;overflow-y:auto;">
+        <span class="close hover-target" onclick="document.getElementById('elementEditorModal').classList.remove('show');showToolbarForModal();" style="color:#f59e0b;">×</span>
+        <h2 style="color:#f59e0b;font-weight:900;margin-bottom:20px;font-family:monospace;">✏️ EDIT <span id="edType"></span></h2>
+        <div id="rowTitle" style="margin-bottom:15px;"><label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Title</label><input type="text" id="edTitle" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        <div id="rowContent" style="margin-bottom:15px;"><label id="lblContent" style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Content / Label / HTML</label><textarea id="edContent" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;height:80px;"></textarea></div>
+        <div id="rowSkillLevels" class="skill-level-editor" style="display:none;margin-bottom:15px;">
+            <label style="color:#22c55e;font-size:0.8rem;font-family:monospace;font-weight:bold;">Skill Matrix Sliders</label>
+            <div class="skill-level-grid">
+                <div class="skill-level-row"><input type="text" id="skillName1Input" class="admin-input" placeholder="Skill name"><input type="range" id="skillLevel1Input" min="0" max="100" step="1" oninput="syncSkillLevelEditor()"><span id="skillLevel1Value">0%</span></div>
+                <div class="skill-level-row"><input type="text" id="skillName2Input" class="admin-input" placeholder="Skill name"><input type="range" id="skillLevel2Input" min="0" max="100" step="1" oninput="syncSkillLevelEditor()"><span id="skillLevel2Value">0%</span></div>
+                <div class="skill-level-row"><input type="text" id="skillName3Input" class="admin-input" placeholder="Skill name"><input type="range" id="skillLevel3Input" min="0" max="100" step="1" oninput="syncSkillLevelEditor()"><span id="skillLevel3Value">0%</span></div>
+                <div class="skill-level-row"><input type="text" id="skillName4Input" class="admin-input" placeholder="Skill name"><input type="range" id="skillLevel4Input" min="0" max="100" step="1" oninput="syncSkillLevelEditor()"><span id="skillLevel4Value">0%</span></div>
+            </div>
+        </div>
+        <div id="rowFileUpload" style="margin-bottom:15px;display:none;background:rgba(245,158,11,0.05);padding:10px;border:1px solid rgba(245,158,11,0.3);border-radius:6px;">
+            <label style="color:#f59e0b;font-size:0.8rem;font-family:monospace;font-weight:bold;">[ Upload File ] OR [ Paste URL ]</label>
+            <input type="file" id="edFile" class="admin-input" style="padding:8px;margin-top:5px;margin-bottom:5px;">
+            <div id="edUploadStatus" style="color:#22c55e;font-size:0.8rem;font-family:monospace;display:none;"></div>
+        </div>
+        <div id="rowUrl" style="margin-bottom:15px;"><label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">URL / Source</label><input type="text" id="edUrl" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        <div id="rowThumb" style="margin-bottom:15px;"><label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Thumbnail URL</label><input type="text" id="edThumb" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        <div id="rowDim" style="margin-bottom:15px;display:flex;gap:10px;">
+            <div style="flex:1;"><label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Width</label><input type="text" id="edW" class="admin-input" placeholder="e.g. 100%" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div style="flex:1;"><label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Height</label><input type="text" id="edH" class="admin-input" placeholder="e.g. auto" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <div id="rowMediaToggles" style="margin-bottom:15px;">
+            <label style="color:#d1fae5;"><input type="checkbox" id="edAutoplay"> Autoplay</label>
+            <label style="margin-left:15px;color:#d1fae5;"><input type="checkbox" id="edLoop"> Loop</label>
+        </div>
+        <div id="rowPopupData" style="margin-bottom:15px;display:none;padding:15px;border:1px solid #f59e0b;background:rgba(245,158,11,0.1);border-radius:8px;">
+            <h4 style="color:#f59e0b;font-family:monospace;margin-bottom:10px;">[ MODAL POPUP CONTENT ]</h4>
+            <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Popup Title</label>
+            <input type="text" id="edPopupTitle" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;margin-bottom:10px;">
+            <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Popup Content (HTML)</label>
+            <textarea id="edPopupContent" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;height:100px;"></textarea>
+        </div>
+
+        <div id="rowStyleEditor" style="margin-bottom:15px;padding:14px;border:1px solid rgba(6,182,212,0.22);background:rgba(6,182,212,0.045);border-radius:8px;">
+            <h4 style="color:#06b6d4;font-family:monospace;margin-bottom:10px;">[ STYLE ]</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;">
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Text Color</label><input type="text" id="edTextColor" class="admin-input" placeholder="#ffffff / var(--c-prim)" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Background</label><input type="text" id="edBgColor" class="admin-input" placeholder="rgba(0,0,0,.4)" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Border</label><input type="text" id="edBorderColor" class="admin-input" placeholder="#06b6d4" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Accent</label><input type="text" id="edAccentColor" class="admin-input" placeholder="#22c55e" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Font Size</label><input type="text" id="edFontSize" class="admin-input" placeholder="1rem / 18px" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Weight</label><select id="edFontWeight" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;"><option value="">Default</option><option value="300">Light</option><option value="400">Regular</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="900">Heavy</option></select></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Align</label><select id="edTextAlign" class="admin-input" style="text-align:left;padding:8px;margin-top:5px;"><option value="">Default</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option><option value="justify">Justify</option></select></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Padding</label><input type="text" id="edPadding" class="admin-input" placeholder="16px / 12px 20px" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Margin</label><input type="text" id="edMargin" class="admin-input" placeholder="20px 0" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Radius</label><input type="text" id="edRadius" class="admin-input" placeholder="8px" style="text-align:left;padding:8px;margin-top:5px;"></div>
+                <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Shadow</label><input type="text" id="edShadow" class="admin-input" placeholder="0 0 18px #06b6d4" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            </div>
+            <label style="display:block;color:#a1a1aa;font-size:0.75rem;font-family:monospace;margin-top:10px;">Custom CSS for this element</label>
+            <textarea id="edCustomCss" class="admin-input" placeholder="letter-spacing:1px; text-transform:uppercase;" style="text-align:left;padding:8px;margin-top:5px;height:58px;"></textarea>
+        </div>
+        <hr style="border-color:rgba(245,158,11,0.3);margin:15px 0;">
+        <h4 style="color:#a1a1aa;font-size:0.8rem;margin-bottom:10px;font-family:monospace;">Visibility</h4>
+        <div style="margin-bottom:20px;">
+            <label style="color:#d1fae5;"><input type="checkbox" id="edVisDesktop"> Desktop</label>
+            <label style="margin-left:15px;color:#d1fae5;"><input type="checkbox" id="edVisMobile"> Mobile</label>
+            <label style="margin-left:15px;color:#f59e0b;"><input type="checkbox" id="edVisAdmin"> Admin Only</label>
+        </div>
+        <button class="btn hover-target" onclick="saveElementEdit()" style="width:100%;border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,0.1);">APPLY CHANGES</button>
+    </div>
+</div>
+
+<div id="systemLogsModal" class="modal">
+    <div class="modal-box admin-modal-box" style="max-width:900px !important;">
+        <span class="close hover-target" onclick="closeSystemLogs()" style="color:#f59e0b;">×</span>
+        <h2 style="color:#f59e0b;font-weight:900;margin-bottom:15px;font-family:monospace;">📝 SYSTEM LOGS</h2>
+        <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+            <button class="builder-btn hover-target active" id="logFilterALL" onclick="filterLogs('ALL')">ALL</button>
+            <button class="builder-btn hover-target" id="logFilterSYSTEM" onclick="filterLogs('SYSTEM')">SYS</button>
+            <button class="builder-btn hover-target" id="logFilterMEDIA" onclick="filterLogs('MEDIA')">MEDIA</button>
+            <button class="builder-btn hover-target" id="logFilterBUILDER" onclick="filterLogs('BUILDER')">BUILDER</button>
+            <button class="builder-btn hover-target" id="logFilterFIREBASE" onclick="filterLogs('FIREBASE')">DB</button>
+            <button class="builder-btn hover-target" id="logFilterEVENT" onclick="filterLogs('EVENT')">EVENTS</button>
+            <button class="builder-btn hover-target" style="margin-left:auto;border-color:#ef4444;color:#ef4444;" onclick="clearLogs()">CLEAR</button>
+        </div>
+        <div class="terminal-window" style="height:50vh;width:100%;border:1px solid #f59e0b;border-radius:8px;">
+            <div class="terminal-output" id="logGrid" style="padding:15px;overflow-y:auto;text-align:left;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-box">
+        <span class="close hover-target" onclick="closeModal()">×</span>
+        <h2 id="modalTitle" style="color:var(--c-prim);font-weight:900;text-transform:uppercase;"></h2>
+        <hr style="border-color:rgba(var(--c-prim-rgb),0.3);margin:15px 0;">
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<div id="changelogEditorModal" class="modal">
+    <div class="modal-box admin-modal-box premium-changelog-editor">
+        <span class="close hover-target" onclick="closeChangelogEditor()">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark amber">CL</div>
+            <div>
+                <div class="premium-modal-kicker">Build Notes</div>
+                <h2>Changelog Editor</h2>
+                <p>Create a new update entry or revise an existing build note without leaving the control room.</p>
+            </div>
+        </div>
+        <div class="premium-form-grid">
+            <label class="premium-field premium-field-wide">
+                <span>Mode</span>
+                <select id="clSelectVersion" class="admin-input hover-target" onchange="switchChangelogMode()">
+                    <option value="new">Create New Version</option>
+                </select>
+            </label>
+            <label class="premium-field">
+                <span>Version</span>
+                <input type="text" id="clVersion" class="admin-input hover-target" placeholder="v2.3.0">
+            </label>
+            <label class="premium-field premium-field-wide">
+                <span>Update Note</span>
+                <input type="text" id="clAdded" class="admin-input hover-target" placeholder="New feature, fix, or polish note">
+            </label>
+        </div>
+        <button type="button" class="btn hover-target premium-action-btn amber" onclick="pushChangelog()">Publish Update</button>
+    </div>
+</div>
+
+<div id="sysManagerModal" class="modal">
+    <div class="modal-box admin-modal-box premium-sys-config">
+        <span class="close hover-target" onclick="closeSysManager()">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark amber">FX</div>
+            <div>
+                <div class="premium-modal-kicker">Site Config</div>
+                <h2>Effect Lab</h2>
+                <p>Tune rare entry events, preview them fast, and keep the portfolio mood under control.</p>
+            </div>
+        </div>
+
+        <div class="egg-control-grid" aria-label="Easter egg chance controls">
+            <label class="egg-control egg-virus">
+                <span><b>Virus Breach</b><small>Terminal takeover with crash-style motion.</small></span>
+                <input type="range" id="eggVirus" min="0" max="20" step="1" value="3" oninput="syncEggConfigUI()">
+                <em id="eggVirusValue">3%</em>
+            </label>
+            <label class="egg-control egg-glitch">
+                <span><b>Glitch Pulse</b><small>Short corrupted signal flash.</small></span>
+                <input type="range" id="eggGlitch" min="0" max="20" step="1" value="5" oninput="syncEggConfigUI()">
+                <em id="eggGlitchValue">5%</em>
+            </label>
+            <label class="egg-control egg-void">
+                <span><b>Void Signal</b><small>Deep cinematic connection event.</small></span>
+                <input type="range" id="eggVoid" min="0" max="20" step="1" value="1" oninput="syncEggConfigUI()">
+                <em id="eggVoidValue">1%</em>
+            </label>
+            <label class="egg-control egg-meltdown">
+                <span><b>Core Meltdown</b><small>High-intensity recovery sequence.</small></span>
+                <input type="range" id="eggMeltdown" min="0" max="20" step="1" value="2" oninput="syncEggConfigUI()">
+                <em id="eggMeltdownValue">2%</em>
+            </label>
+        </div>
+
+        <div class="egg-preview-grid" aria-label="Easter egg previews">
+            <button type="button" class="hover-target egg-preview-card egg-virus" onclick="testVirus()">
+                <span>01</span><b>Preview Breach</b><small>Run red alert</small>
+            </button>
+            <button type="button" class="hover-target egg-preview-card egg-void" onclick="previewVoidEvent()">
+                <span>02</span><b>Preview Void</b><small>Play signal event</small>
+            </button>
+            <button type="button" class="hover-target egg-preview-card egg-glitch" onclick="previewGlitchEvent()">
+                <span>03</span><b>Preview Glitch</b><small>Flash anomaly</small>
+            </button>
+            <button type="button" class="hover-target egg-preview-card egg-meltdown" onclick="triggerMeltdownEvent()">
+                <span>04</span><b>Preview Meltdown</b><small>Stress sequence</small>
+            </button>
+        </div>
+
+        <button type="button" class="btn hover-target premium-action-btn amber" onclick="saveSysConfig()">Save Effect Settings</button>
+    </div>
+</div>
+
+<div id="feedbackModal" class="modal">
+    <div class="modal-box feedback-box premium-feedback-box">
+        <span class="close hover-target" onclick="closeFeedbackModal()">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark">JR</div>
+            <div>
+                <div class="premium-modal-kicker">Site Feedback</div>
+                <h2>Send a Note</h2>
+                <p>Bug report, idea, polish request, or anything you noticed while using the site.</p>
+            </div>
+        </div>
+        <div id="fbFormContainer">
+            <form id="feedbackForm" class="premium-feedback-form" onsubmit="submitFeedback(event)">
+                <label for="fbMessage">Message</label>
+                <textarea id="fbMessage" required class="name-input hover-target premium-textarea" placeholder="Write it here..."></textarea>
+                <button type="submit" id="fbSubmitBtn" class="btn hover-target premium-action-btn">Send Feedback</button>
+            </form>
+        </div>
+        <div id="fbLoadingContainer" class="premium-feedback-loading" style="display:none;">
+            <div class="premium-mini-orbit" aria-hidden="true"><span></span><span></span><b>JR</b></div>
+            <p id="fbLoadText">Preparing feedback...</p>
+            <div class="premium-meter"><div id="fbLoadBar" class="premium-meter-fill load-bar"></div></div>
+        </div>
+    </div>
+</div>
+
+
+
+<div id="adminModal" class="modal">
+    <div class="modal-box admin-modal-box premium-admin-login">
+        <span class="close hover-target" onclick="document.getElementById('adminModal').classList.remove('show');">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark amber">JR</div>
+            <div>
+                <div class="premium-modal-kicker">Admin Gate</div>
+                <h2>Control Room</h2>
+                <p>Sign in to edit the site layout, text, uploads, logs, and private tools.</p>
+            </div>
+        </div>
+        <form id="adminForm" class="premium-admin-form" onsubmit="attemptAdminLogin(event)">
+            <label for="adminUser">Email</label>
+            <input type="email" id="adminUser" class="admin-input" placeholder="you@example.com" autocomplete="off" required>
+            <label for="adminPass">Password</label>
+            <input type="password" id="adminPass" class="admin-input" placeholder="Enter password" required>
+            <button type="submit" id="adminAuthBtn" class="btn hover-target premium-action-btn amber">Unlock Admin</button>
+        </form>
+        <p id="adminStatus" class="premium-status-error" style="display:none;">Access denied. Check the login and try again.</p>
+    </div>
+</div>
+
+
+
+<div id="adminSelectionModal" class="modal">
+    <div class="modal-box admin-modal-box premium-admin-hub">
+        <span class="close hover-target" onclick="document.getElementById('adminSelectionModal').classList.remove('show');showToolbarForModal();">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark amber">JR</div>
+            <div>
+                <div class="premium-modal-kicker">Admin Panel</div>
+                <h2>Control Room</h2>
+                <p>Choose what you want to tune, review, or publish.</p>
+            </div>
+        </div>
+        <div class="admin-grid-menu premium-admin-grid">
+            <button class="hover-target premium-admin-card" onclick="openTitleEditor()"><span>T</span><b>Title Editor</b><small>Intro, hero, tags, stats</small></button>
+            <button class="hover-target premium-admin-card" onclick="openUIBuilder()"><span>UI</span><b>Layout Builder</b><small>Add, move, edit sections</small></button>
+            <button class="hover-target premium-admin-card" onclick="openSystemLogs()"><span>LOG</span><b>System Logs</b><small>Check site events</small></button>
+            <button class="hover-target premium-admin-card" onclick="openSysManager()"><span>CFG</span><b>Site Config</b><small>Effects and settings</small></button>
+            <button class="hover-target premium-admin-card" onclick="openChangelogEditor()"><span>CL</span><b>Changelog</b><small>Publish updates</small></button>
+            <button class="hover-target premium-admin-card wide" onclick="selectDashboard()"><span>DB</span><b>Messages Dashboard</b><small>Read feedback and contact notes</small></button>
+            <button class="hover-target premium-admin-exit" onclick="exitAdminMode()">Exit Admin Mode</button>
+        </div>
+    </div>
+</div>
+
+<div id="titleEditorModal" class="modal">
+    <div class="modal-box admin-modal-box" style="text-align:left;border-color:#f59e0b;max-width:760px;max-height:88vh;overflow-y:auto;">
+        <span class="close hover-target" onclick="closeTitleEditor()" style="color:#f59e0b;">&times;</span>
+        <h2 style="color:#f59e0b;font-weight:900;margin-bottom:18px;font-family:monospace;">TITLE EDITOR</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px;">
+            <div>
+                <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Main Title</label>
+                <input type="text" id="titleMainInput" class="admin-input" placeholder="JoshRTX" style="text-align:left;padding:8px;margin-top:5px;">
+            </div>
+            <div>
+                <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Start Screen Line</label>
+                <input type="text" id="titleStartLineInput" class="admin-input" placeholder="Personal Build" style="text-align:left;padding:8px;margin-top:5px;">
+            </div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Subtitle</label>
+            <input type="text" id="titleSubtitleInput" class="admin-input" placeholder="Student dev space" style="text-align:left;padding:8px;margin-top:5px;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Hero Tag</label>
+            <input type="text" id="titleHeroTagInput" class="admin-input" placeholder="> PERSONAL_BUILD // JOSHRTX_v4.2" style="text-align:left;padding:8px;margin-top:5px;">
+        </div>
+        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">INTRO MENU</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 1</label><input type="text" id="introStatus1Input" class="admin-input" placeholder="JoshRTX v4.2" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 2</label><input type="text" id="introStatus2Input" class="admin-input" placeholder="Portfolio ready" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 3</label><input type="text" id="introStatus3Input" class="admin-input" placeholder="Sound unlock" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Eyebrow</label><input type="text" id="introEyebrowInput" class="admin-input" placeholder="Personal webspace" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Logo Mark</label><input type="text" id="introLogoMarkInput" class="admin-input" placeholder="JR" maxlength="6" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Intro Title</label><input type="text" id="introLogoTitleInput" class="admin-input" placeholder="JoshRTX" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Intro Subcopy</label>
+            <input type="text" id="introSubcopyInput" class="admin-input" placeholder="Projects, games, notes, and experiments" style="text-align:left;padding:8px;margin-top:5px;">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 1</label><input type="text" id="introSpec1Input" class="admin-input" placeholder="HTML/CSS" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 2</label><input type="text" id="introSpec2Input" class="admin-input" placeholder="JavaScript" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 3</label><input type="text" id="introSpec3Input" class="admin-input" placeholder="Roblox Studio" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Launch Text</label><input type="text" id="introEnterInput" class="admin-input" placeholder="Tap to launch" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Footer</label><input type="text" id="introFooterInput" class="admin-input" placeholder="Built by Josh // personal site" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">INTRO LOADING</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Frame Label</label><input type="text" id="introBootFrameInput" class="admin-input" placeholder="JOSHRTX.PORTFOLIO" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Logo Mark</label><input type="text" id="introBootLogoInput" class="admin-input" placeholder="JR" maxlength="8" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Panel Label</label><input type="text" id="introBootPanelInput" class="admin-input" placeholder="SYSTEM HANDOFF" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Title Subline</label><input type="text" id="introBootSublineInput" class="admin-input" placeholder="CODE / GAMES / PROJECTS" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 1</label><input type="text" id="introBootStage1Input" class="admin-input" placeholder="Booting canvas" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 2</label><input type="text" id="introBootStage2Input" class="admin-input" placeholder="Loading projects" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 3</label><input type="text" id="introBootStage3Input" class="admin-input" placeholder="Tuning interface" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 4</label><input type="text" id="introBootStage4Input" class="admin-input" placeholder="Opening portfolio" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">TAGS</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Tag 1</label><input type="text" id="titleTag1Input" class="admin-input" placeholder="BSIT Student" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Tag 2</label><input type="text" id="titleTag2Input" class="admin-input" placeholder="Gamer" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Tag 3</label><input type="text" id="titleTag3Input" class="admin-input" placeholder="Frontend Learner" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Tag 4</label><input type="text" id="titleTag4Input" class="admin-input" placeholder="Learning Developer" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">STATS</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Projects Value</label><input type="text" id="titleProjectsValueInput" class="admin-input" placeholder="2" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Projects Label</label><input type="text" id="titleProjectsLabelInput" class="admin-input" placeholder="Projects" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Coding Value</label><input type="text" id="titleCodingValueInput" class="admin-input" placeholder="1+" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Coding Label</label><input type="text" id="titleCodingLabelInput" class="admin-input" placeholder="Coding" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Course Value</label><input type="text" id="titleCourseValueInput" class="admin-input" placeholder="BSIT" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Course Label</label><input type="text" id="titleCourseLabelInput" class="admin-input" placeholder="Course" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Uptime Label</label><input type="text" id="titleUptimeLabelInput" class="admin-input" placeholder="Uptime" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">STYLE</h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;">
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Color</label><input type="text" id="titleColorInput" class="admin-input" placeholder="#06b6d4" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Font Size</label><input type="text" id="titleFontSizeInput" class="admin-input" placeholder="5rem / clamp(...)" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spacing</label><input type="text" id="titleLetterSpacingInput" class="admin-input" placeholder="2px" style="text-align:left;padding:8px;margin-top:5px;"></div>
+            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Shadow</label><input type="text" id="titleShadowInput" class="admin-input" placeholder="0 0 30px #06b6d4" style="text-align:left;padding:8px;margin-top:5px;"></div>
+        </div>
+        <label style="display:block;color:#a1a1aa;font-size:0.75rem;font-family:monospace;margin-top:10px;">Custom CSS for Title</label>
+        <textarea id="titleCustomCssInput" class="admin-input" placeholder="text-transform:none;" style="text-align:left;padding:8px;margin-top:5px;height:58px;"></textarea>
+        <button class="btn hover-target" onclick="saveTitleEditor()" style="width:100%;margin-top:18px;border-color:#f59e0b;color:#f59e0b;">SAVE TITLE</button>
+    </div>
+</div>
+
+  <div id="adminDashboardScreen" class="modal">
+    <div class="modal-box admin-modal-box premium-comms-dashboard">
+        <span class="close hover-target" onclick="closeDashboard()">×</span>
+        <div class="premium-modal-head">
+            <div class="premium-modal-mark amber">CM</div>
+            <div>
+                <div class="premium-modal-kicker">Inbox</div>
+                <h2>Comms Dashboard</h2>
+                <p>Review contact messages, feedback reports, and site notes from one cleaner command view.</p>
+            </div>
+        </div>
+        <div class="premium-dashboard-grid">
+            <section class="premium-dashboard-column messages">
+                <div class="premium-dashboard-column-head">
+                    <div>
+                        <span>Contact</span>
+                        <h3>Messages</h3>
+                    </div>
+                    <b id="dashMsgCount">--</b>
+                </div>
+                <div id="dashMessagesContainer" class="premium-dashboard-list"></div>
+            </section>
+            <section class="premium-dashboard-column feedback">
+                <div class="premium-dashboard-column-head">
+                    <div>
+                        <span>System</span>
+                        <h3>Feedback</h3>
+                    </div>
+                    <b id="dashFbCount">--</b>
+                </div>
+                <div id="dashFeedbackContainer" class="premium-dashboard-list"></div>
+            </section>
+        </div>
+        <div class="premium-dashboard-actions">
+            <button type="button" class="hover-target premium-dashboard-btn" onclick="selectDashboard()">Refresh</button>
+            <button type="button" class="hover-target premium-dashboard-btn danger" onclick="closeDashboard()">Close Dashboard</button>
+        </div>
+    </div>
+</div>
+
+      <script src="assets/js/bg.js"></script>
+      <script src="assets/js/sfx.js"></script>
+      <script src="assets/js/ui.js?v=top-settings-premium-1"></script>
+      <script type="module" src="assets/js/firebase.js"></script>
+      <script src="assets/js/site-motion.js?v=1080p-lite-1"></script>
+
+  </body>
+  </html>

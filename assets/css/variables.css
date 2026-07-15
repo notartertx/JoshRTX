@@ -1,0 +1,19 @@
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-color: #020806;
+            --c-prim: #06b6d4;
+            --c-prim-rgb: 6, 182, 212;
+            --c-sec: #22c55e;
+            --c-sec-rgb: 34, 197, 94;
+            --c-acc: #4ade80;
+            --c-acc-rgb: 74, 222, 128;
+            --card-bg: rgba(10, 20, 15, 0.85);
+            --card-hover: rgba(15, 30, 25, 0.95);
+        }
+        body.theme-red { --bg-color:#0a0000; --c-prim:#ff2a2a; --c-prim-rgb:255,42,42; --c-sec:#990000; --c-sec-rgb:153,0,0; --c-acc:#ff7373; --c-acc-rgb:255,115,115; --card-bg:rgba(20,5,5,0.85); --card-hover:rgba(35,10,10,0.95); }
+        body.theme-blue { --bg-color:#00040d; --c-prim:#00d4ff; --c-prim-rgb:0,212,255; --c-sec:#0055ff; --c-sec-rgb:0,85,255; --c-acc:#80e5ff; --c-acc-rgb:128,229,255; --card-bg:rgba(5,10,25,0.85); --card-hover:rgba(10,20,40,0.95); }
+        body.theme-purple { --bg-color:#08020f; --c-prim:#a855f7; --c-prim-rgb:168,85,247; --c-sec:#7c3aed; --c-sec-rgb:124,58,237; --c-acc:#c084fc; --c-acc-rgb:192,132,252; --card-bg:rgba(15,5,25,0.85); --card-hover:rgba(25,10,40,0.95); }
+        body.theme-carl { --bg-color:#120712; --c-prim:#ff66c4; --c-prim-rgb:255,102,196; --c-sec:#ff9ee2; --c-sec-rgb:255,158,226; --c-acc:#ffffff; --c-acc-rgb:255,255,255; --card-bg:rgba(30,10,25,0.85); --card-hover:rgba(45,15,35,0.95); }
+        body.theme-neon { --bg-color:#050900; --c-prim:#aaff00; --c-prim-rgb:170,255,0; --c-sec:#ff6b00; --c-sec-rgb:255,107,0; --c-acc:#ffee00; --c-acc-rgb:255,238,0; --card-bg:rgba(8,14,0,0.85); --card-hover:rgba(15,22,0,0.95); }
+        body.theme-ocean { --bg-color:#000a01; --c-prim:#00ff41; --c-prim-rgb:0,255,65; --c-sec:#00b32c; --c-sec-rgb:0,179,44; --c-acc:#7fff00; --c-acc-rgb:127,255,0; --card-bg:rgba(0,10,2,0.88); --card-hover:rgba(0,18,5,0.95); }
+        body.theme-ember { --bg-color:#0d0300; --c-prim:#ff5500; --c-prim-rgb:255,85,0; --c-sec:#cc0044; --c-sec-rgb:204,0,68; --c-acc:#ffaa44; --c-acc-rgb:255,170,68; --card-bg:rgba(20,5,0,0.85); --card-hover:rgba(30,8,0,0.95); }

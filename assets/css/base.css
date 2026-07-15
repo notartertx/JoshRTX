@@ -1,0 +1,125 @@
+        body.void-event .glow-core { opacity:0.1 !important; }
+        .void-fx { background:radial-gradient(circle,transparent 50%,rgba(0,20,50,0.8) 100%); opacity:1; transition:opacity 2s; }
+        .void-text { color:#88bbff; text-shadow:0 0 20px #88bbff,0 0 40px #0055ff; transition:opacity 2s ease-in-out; }
+        .void-text.show { opacity:1; }
+
+        body.glitch-event { animation:masterGlitch 0.15s infinite; filter:hue-rotate(90deg) contrast(150%); }
+        @keyframes masterGlitch { 0%{transform:translate(2px,1px) skewX(1deg)} 50%{transform:translate(-2px,-1px) skewX(-1deg)} 100%{transform:translate(1px,-2px) skewX(0deg)} }
+        .glitch-fx { background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(245,158,11,0.1) 3px,rgba(245,158,11,0.1) 4px); opacity:1; }
+        .glitch-text { color:#f59e0b; text-shadow:2px 0 0 red,-2px 0 0 cyan,0 0 15px #f59e0b; animation:masterGlitch 0.1s infinite; opacity:1; }
+
+        body.virus-chaos { animation:violentShake 0.15s infinite; filter:invert(1) hue-rotate(180deg) contrast(150%); }
+        body.virus-chaos * { font-family:'Wingdings',serif !important; }
+        @keyframes violentShake { 0%{transform:translate(5px,5px) rotate(1deg)} 25%{transform:translate(-5px,-5px) rotate(-1deg) scale(1.02)} 50%{transform:translate(5px,-2px) rotate(0deg)} 75%{transform:translate(-2px,5px) rotate(-1deg) scale(0.98)} 100%{transform:translate(2px,-2px) rotate(1deg)} }
+
+        body.perf-mode .glow-core { display:none !important; }
+        body.perf-mode .particles { display:none !important; }
+        /* --- BASE STYLES --- */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; cursor:none; }
+        html { scroll-behavior:smooth; }
+        ::-webkit-scrollbar { display:none; }
+        * { scrollbar-width:none; -ms-overflow-style:none; }
+        body { background:var(--bg-color); color:white; overflow-x:hidden; transition:background 0.5s ease; }
+
+        .bg { position:fixed; top:-5%; left:-5%; width:110%; height:110%; z-index:-1; overflow:hidden; background:var(--bg-color); will-change:transform; transition:opacity 1s ease,background 0.5s ease; }
+        .tech-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(var(--c-sec-rgb),0.15) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--c-prim-rgb),0.15) 1px,transparent 1px); background-size:60px 60px; mask-image:radial-gradient(circle at center,black 10%,transparent 60%); animation:pulseGrid 8s infinite alternate ease-in-out; will-change:transform,opacity; }
+        @keyframes pulseGrid { 0%{transform:scale(1) translateZ(0);opacity:0.6} 100%{transform:scale(1.05) translateZ(0);opacity:0.2} }
+        .glow-core { position:absolute; top:50%; left:50%; width:150vw; height:150vh; transform-origin:center; will-change:transform,opacity; }
+        .primary-beam { background:radial-gradient(circle,rgba(var(--c-sec-rgb),0.12) 0%,transparent 50%); animation:spinBreathingAurora 20s linear infinite; }
+        .secondary-beam { background:radial-gradient(circle,rgba(var(--c-prim-rgb),0.12) 0%,transparent 50%); animation:spinBreathingAurora 30s linear infinite reverse; }
+        @keyframes spinBreathingAurora { 0%{transform:translate(-50%,-50%) rotate(0deg) scale(1);opacity:0.5} 50%{transform:translate(-50%,-50%) rotate(180deg) scale(1.2);opacity:0.8} 100%{transform:translate(-50%,-50%) rotate(360deg) scale(1);opacity:0.5} }
+        .particles { display: none !important; }
+        /* Canvas particle system */
+        #particleCanvas {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        body.perf-mode #particleCanvas { display: none !important; }
+
+        /* ── Dual-ring custom cursor ── */
+
+        /* ─── Persistent admin button: always amber regardless of theme ─── */
+        #persistentAdminBtn {
+            color: #f59e0b !important;
+            border-color: #f59e0b !important;
+            background: rgba(245,158,11,0.08) !important;
+            box-shadow: 0 0 14px rgba(245,158,11,0.18) !important;
+        }
+        #persistentAdminBtn:hover {
+            background: rgba(245,158,11,0.18) !important;
+            box-shadow: 0 0 22px rgba(245,158,11,0.35) !important;
+            color: #fff !important;
+        }
+        #persistentAdminBtn:active {
+            transform: scale(0.95) !important;
+        }
+
+/* ── Enhanced aurora beams ── */
+.tertiary-beam {
+    background: radial-gradient(ellipse 80% 30% at center, rgba(var(--c-acc-rgb),0.09) 0%, transparent 65%);
+    animation: driftAurora 25s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+}
+.quaternary-beam {
+    background: radial-gradient(ellipse 45% 75% at 25% 75%, rgba(var(--c-prim-rgb),0.1) 0%, transparent 65%);
+    animation: cornerSweep 38s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+@keyframes driftAurora {
+    0%   { transform: translate(-60%,-40%) rotate(-25deg) scale(0.85); opacity: 0.25; }
+    50%  { transform: translate(-42%,-58%) rotate(25deg)  scale(1.25); opacity: 0.65; }
+    100% { transform: translate(-55%,-45%) rotate(-8deg)  scale(1.05); opacity: 0.35; }
+}
+@keyframes cornerSweep {
+    0%   { transform: translate(-50%,-50%) rotate(0deg)   scale(1.0);  opacity: 0.18; }
+    33%  { transform: translate(-50%,-50%) rotate(120deg) scale(1.45); opacity: 0.45; }
+    66%  { transform: translate(-50%,-50%) rotate(240deg) scale(0.85); opacity: 0.28; }
+    100% { transform: translate(-50%,-50%) rotate(360deg) scale(1.0);  opacity: 0.18; }
+}
+
+/* ── Nebula orbs ── */
+.nebula-orb {
+    position: absolute; border-radius: 50%;
+    pointer-events: none; will-change: transform, opacity;
+    filter: blur(70px);
+}
+.nebula-1 {
+    width: 45vw; height: 45vw; top: 5%; left: 2%;
+    background: radial-gradient(circle, rgba(var(--c-prim-rgb),0.13) 0%, transparent 70%);
+    animation: nebulaDrift1 20s ease-in-out infinite alternate;
+}
+.nebula-2 {
+    width: 55vw; height: 55vw; bottom: 2%; right: 2%;
+    background: radial-gradient(circle, rgba(var(--c-sec-rgb),0.11) 0%, transparent 70%);
+    animation: nebulaDrift2 28s ease-in-out infinite alternate;
+}
+.nebula-3 {
+    width: 35vw; height: 35vw; top: 38%; left: 38%;
+    background: radial-gradient(circle, rgba(var(--c-acc-rgb),0.07) 0%, transparent 70%);
+    animation: nebulaDrift3 34s ease-in-out infinite alternate;
+}
+@keyframes nebulaDrift1 {
+    0%   { transform: translate(0,0)       scale(1.0);  opacity: 0.55; }
+    50%  { transform: translate(5vw,4vh)   scale(1.18); opacity: 0.9;  }
+    100% { transform: translate(-3vw,7vh)  scale(0.88); opacity: 0.45; }
+}
+@keyframes nebulaDrift2 {
+    0%   { transform: translate(0,0)       scale(1.1);  opacity: 0.45; }
+    50%  { transform: translate(-5vw,-5vh) scale(0.88); opacity: 0.75; }
+    100% { transform: translate(4vw,-2vh)  scale(1.22); opacity: 0.38; }
+}
+@keyframes nebulaDrift3 {
+    0%   { transform: translate(0,0)      scale(1.0);  opacity: 0.28; }
+    100% { transform: translate(5vw,-5vh) scale(1.35); opacity: 0.55; }
+}
+
+/* ── Perf mode hides extra layers ── */
+body.perf-mode .nebula-orb,
+body.perf-mode .tertiary-beam,
+body.perf-mode .quaternary-beam { display: none !important; }
+
+/* ── Mobile: reduce blur cost ── */
+@media (max-width: 768px) {
+    .nebula-orb { filter: blur(45px); }
+    .tertiary-beam, .quaternary-beam { opacity: 0.5; }
+}

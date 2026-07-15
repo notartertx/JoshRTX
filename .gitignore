@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+
+# Cache & build artifacts
+.cache/
+.config/
+.upm/
+.local/
+.agents/
+
+# OS files
+.DS_Store
+Thumbs.db
