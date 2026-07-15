@@ -545,7 +545,9 @@
         const lowEndBoot = motionProfile.lowEnd;
         const W = window.innerWidth;
         const H = window.innerHeight;
-        const dpr = fullHdCappedDpr(W, H, lowEndBoot ? 2.25 : (mobileBoot ? 2.25 : 2.5));
+        const dpr = lowEndBoot
+            ? maxLongSideDpr(W, H, 1080, 1.4)
+            : fullHdCappedDpr(W, H, mobileBoot ? 2.25 : 2.5);
         canvas.width = Math.round(W * dpr);
         canvas.height = Math.round(H * dpr);
         canvas.style.width = W + 'px';
@@ -633,12 +635,13 @@
 
         let startTime = null;
         let raf = null;
-        let lastBootDraw = 0;
+        let bootWakeTimer = 0;
         let stagePlayed = -1;
         let titlePlayed = false;
         let bloomPlayed = false;
+        const bootFrameMs = lowEndBoot ? 50 : 33;
         const droneRef = SFX.introBed ? SFX.introBed() : SFX.bootDrone();
-        const staticBootBg = lowEndBoot ? buildStaticBootBackground() : null;
+        const staticBootBg = buildStaticBootBackground(lowEndBoot);
 
         function clamp01(v) { return Math.max(0, Math.min(1, v)); }
         function smooth(v) { v = clamp01(v); return v * v * (3 - 2 * v); }
@@ -653,7 +656,7 @@
             ctx.arcTo(x, y, x + w, y, rr);
             ctx.closePath();
         }
-        function buildStaticBootBackground() {
+        function buildStaticBootBackground(includeGrid) {
             const bgCanvas = document.createElement('canvas');
             bgCanvas.width = W;
             bgCanvas.height = H;
@@ -666,30 +669,32 @@
             bgCtx.fillRect(0, 0, W, H);
 
             const glow = bgCtx.createRadialGradient(cx, cy * 0.88, 0, cx, cy, Math.max(W, H) * 0.62);
-            glow.addColorStop(0, `rgba(${primRgb},0.14)`);
-            glow.addColorStop(0.48, `rgba(${secRgb},0.055)`);
+            glow.addColorStop(0, `rgba(${primRgb},${includeGrid ? 0.14 : 0.17})`);
+            glow.addColorStop(includeGrid ? 0.48 : 0.44, `rgba(${secRgb},${includeGrid ? 0.055 : 0.07})`);
             glow.addColorStop(1, 'rgba(0,0,0,0)');
             bgCtx.fillStyle = glow;
             bgCtx.fillRect(0, 0, W, H);
 
-            bgCtx.save();
-            bgCtx.globalAlpha = 0.055;
-            bgCtx.strokeStyle = `rgb(${primRgb})`;
-            bgCtx.lineWidth = 1;
-            const grid = 72;
-            for (let x = 0; x < W + grid; x += grid) {
-                bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, H); bgCtx.stroke();
+            if (includeGrid) {
+                bgCtx.save();
+                bgCtx.globalAlpha = 0.055;
+                bgCtx.strokeStyle = `rgb(${primRgb})`;
+                bgCtx.lineWidth = 1;
+                const grid = 72;
+                for (let x = 0; x < W + grid; x += grid) {
+                    bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, H); bgCtx.stroke();
+                }
+                for (let y = 0; y < H + grid; y += grid) {
+                    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke();
+                }
+                bgCtx.restore();
             }
-            for (let y = 0; y < H + grid; y += grid) {
-                bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke();
-            }
-            bgCtx.restore();
             return bgCanvas;
         }
 
         function drawBackground(elapsed) {
-            if (staticBootBg) {
-                ctx.drawImage(staticBootBg, 0, 0, W, H);
+            ctx.drawImage(staticBootBg, 0, 0, W, H);
+            if (lowEndBoot) {
                 particles.forEach(pt => {
                     pt.y -= pt.s * 0.22;
                     if (pt.y < -4) { pt.y = H + 4; pt.x = Math.random() * W; }
@@ -703,19 +708,6 @@
                 });
                 return;
             }
-            const bg = ctx.createLinearGradient(0, 0, W, H);
-            bg.addColorStop(0, '#020506');
-            bg.addColorStop(0.44, '#050914');
-            bg.addColorStop(1, '#020302');
-            ctx.fillStyle = bg;
-            ctx.fillRect(0, 0, W, H);
-
-            const glow = ctx.createRadialGradient(cx, cy * 0.88, 0, cx, cy, Math.max(W, H) * 0.62);
-            glow.addColorStop(0, `rgba(${primRgb},0.17)`);
-            glow.addColorStop(0.44, `rgba(${secRgb},0.07)`);
-            glow.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = glow;
-            ctx.fillRect(0, 0, W, H);
 
             ctx.save();
             ctx.globalAlpha = 0.075;
@@ -1011,7 +1003,10 @@
         function finish() {
             if (SFX.stopDrone) SFX.stopDrone(droneRef);
             triggerHaptic('success');
-            cancelAnimationFrame(raf);
+            if (raf) cancelAnimationFrame(raf);
+            if (bootWakeTimer) clearTimeout(bootWakeTimer);
+            raf = null;
+            bootWakeTimer = 0;
             canvas.style.transition = `opacity ${lowEndBoot ? 0.28 : (mobileBoot ? 0.42 : 0.75)}s ease`;
             canvas.style.opacity = '0';
             const subtextEl = document.getElementById('subtext');
@@ -1048,14 +1043,20 @@
             }, lowEndBoot ? 220 : (mobileBoot ? 320 : 520));
         }
 
-        function render(ts) {
-            if (!startTime) startTime = ts;
-            const minFrameDelay = lowEndBoot ? 76 : (mobileBoot ? 32 : 0);
-            if (minFrameDelay && lastBootDraw && ts - lastBootDraw < minFrameDelay) {
-                raf = requestAnimationFrame(render);
+        function scheduleBootFrame() {
+            if (bootFrameMs > 0) {
+                bootWakeTimer = setTimeout(() => {
+                    bootWakeTimer = 0;
+                    raf = requestAnimationFrame(render);
+                }, Math.max(8, bootFrameMs - 8));
                 return;
             }
-            lastBootDraw = ts;
+            raf = requestAnimationFrame(render);
+        }
+
+        function render(ts) {
+            raf = null;
+            if (!startTime) startTime = ts;
             const elapsed = ts - startTime;
             drawBackground(elapsed);
             drawStreaks(elapsed);
@@ -1066,11 +1067,11 @@
             drawStageText(elapsed);
             drawTitle(elapsed);
             drawBloom(elapsed);
-            if (elapsed < T.endAt) raf = requestAnimationFrame(render);
+            if (elapsed < T.endAt) scheduleBootFrame();
             else finish();
         }
 
-        raf = requestAnimationFrame(render);
+        scheduleBootFrame();
     }
 
     function waitForIntroDb(maxWait = 2600) {
@@ -2409,7 +2410,7 @@
         const ctx = cv.getContext('2d', { alpha: true, desynchronized: true });
         if (!ctx) return;
         const MAX = lowEnd ? 4 : (isMobile ? 6 : 18);
-        const frameMs = lowEnd ? 240 : (isMobile ? 100 : 0);
+        const frameMs = lowEnd ? 100 : (isMobile ? 50 : 33);
         const bootLayer = document.getElementById('boot-canvas');
         const loadingLayers = Array.from(document.querySelectorAll('.loading-screen'));
 
@@ -2485,6 +2486,28 @@
             return [cssVar('--c-prim'), cssVar('--c-sec'), cssVar('--c-acc')];
         }
         let palette = getColors();
+        const glowSprites = new Map();
+
+        function getGlowSprite(color) {
+            if (glowSprites.has(color)) return glowSprites.get(color);
+
+            const size = 48;
+            const center = size / 2;
+            const sprite = document.createElement('canvas');
+            sprite.width = size;
+            sprite.height = size;
+            const spriteCtx = sprite.getContext('2d', { alpha: true });
+            if (!spriteCtx) return null;
+
+            const glow = spriteCtx.createRadialGradient(center, center, 0, center, center, center);
+            glow.addColorStop(0, toRgba(color, lowEnd ? 0.45 : 0.85));
+            glow.addColorStop(0.4, toRgba(color, lowEnd ? 0.14 : 0.28));
+            glow.addColorStop(1, toRgba(color, 0));
+            spriteCtx.fillStyle = glow;
+            spriteCtx.fillRect(0, 0, size, size);
+            glowSprites.set(color, sprite);
+            return sprite;
+        }
 
         // ── Spawn ──
         function spawn(spreadY) {
@@ -2545,13 +2568,12 @@
                 }
 
                 const glowR = p.r * (lowEnd ? 2.2 : (isMobile ? 3.4 : 5));
-                const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                grd.addColorStop(0,   toRgba(p.color, alpha * (lowEnd ? 0.45 : 0.85)));
-                grd.addColorStop(0.4, toRgba(p.color, alpha * (lowEnd ? 0.14 : 0.28)));
-                grd.addColorStop(1,   toRgba(p.color, 0));
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
-                ctx.fillStyle = grd; ctx.fill();
+                const glowSprite = getGlowSprite(p.color);
+                if (glowSprite) {
+                    ctx.globalAlpha = alpha;
+                    ctx.drawImage(glowSprite, p.x - glowR, p.y - glowR, glowR * 2, glowR * 2);
+                    ctx.globalAlpha = 1;
+                }
 
                 // Core dot
                 ctx.beginPath();
@@ -2567,6 +2589,7 @@
         // Refresh colors on theme change (mutation on :root vars via body class)
         new MutationObserver(() => {
             palette = getColors();
+            glowSprites.clear();
             particles.forEach(p => {
                 p.color = palette[Math.floor(Math.random() * palette.length)];
             });

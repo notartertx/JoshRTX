@@ -335,6 +335,39 @@ footer {
         radial-gradient(circle at 50% 12%, rgba(var(--c-prim-rgb),0.10), transparent 32rem),
         rgba(0,0,0,0.86) !important;
     backdrop-filter: blur(8px);
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.modal.show {
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.modal:not(.show)::before,
+.modal:not(.show)::after,
+.modal:not(.show) * {
+    animation-play-state: paused !important;
+}
+
+.name-prompt-overlay {
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+}
+
+.name-prompt-overlay.active {
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+/* Full-screen overlays cover these layers, so suspend their offscreen animation work. */
+body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+    :is(.bg, #login-view, #main-view) *,
+body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+    :is(.bg, #login-view, #main-view) *::before,
+body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+    :is(.bg, #login-view, #main-view) *::after {
+    animation-play-state: paused !important;
 }
 
 .close {
@@ -397,6 +430,22 @@ body.perf-mode .data-card {
         radial-gradient(circle at 82% 75%, rgba(var(--c-sec-rgb),0.11), transparent 24rem),
         linear-gradient(180deg, #020608, #000 70%) !important;
     overflow: hidden;
+}
+
+.loading-screen {
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+}
+
+.loading-screen.active {
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.loading-screen:not(.active)::before,
+.loading-screen:not(.active)::after,
+.loading-screen:not(.active) * {
+    animation-play-state: paused !important;
 }
 
 .premium-loader-screen::before {
@@ -2400,6 +2449,50 @@ body.perf-mode .data-card {
     }
 }
 
+/* Keep the scan effects on compositor-friendly transform animations. */
+.hero-scan-line {
+    top: 0;
+    height: 100%;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: 100% 1px;
+    animation-name: heroScanComposited;
+    will-change: transform, opacity;
+}
+
+.avatar-scan::after {
+    top: -100%;
+    animation-name: avatarScanComposited;
+    will-change: transform;
+}
+
+@keyframes heroScanComposited {
+    0% { transform: translate3d(0,0,0); opacity: 0; }
+    5% { opacity: 0.6; }
+    90% { opacity: 0.3; }
+    100% { transform: translate3d(0,100%,0); opacity: 0; }
+}
+
+@keyframes avatarScanComposited {
+    from { transform: translate3d(0,0,0); }
+    to { transform: translate3d(0,1000%,0); }
+}
+
+@keyframes lowEndAmbientPulse {
+    0%, 100% { opacity: 0.24; transform: scale(0.98); }
+    50% { opacity: 0.34; transform: scale(1.02); }
+}
+
+@keyframes lowEndTextPulse {
+    0%, 100% { opacity: 0.58; }
+    50% { opacity: 0.92; }
+}
+
+@keyframes lowEndCornerPulse {
+    from { opacity: 0.5; }
+    to { opacity: 0.9; }
+}
+
 /* Automatic low-end phone profile: preserve the look, lessen repaint-heavy layers. */
 html.reduced-motion-device #init-overlay::before,
 html.reduced-motion-device #init-overlay::after,
@@ -2436,7 +2529,6 @@ html.low-end-device .avatar-ring.r3 {
 
 html.low-end-device #init-overlay::before {
     opacity: 0.34 !important;
-    transform: perspective(900px) rotateX(58deg) translateY(8%) !important;
     animation-duration: 34s !important;
 }
 
@@ -2556,7 +2648,7 @@ html.low-end-device #particleCanvas {
 html.low-end-device .hero-scan-line {
     display: block !important;
     opacity: 0.18 !important;
-    animation: heroScanLine 11s linear infinite 2s !important;
+    animation: heroScanComposited 11s linear infinite 2s !important;
 }
 
 html.low-end-device .avatar-scan,
@@ -2566,20 +2658,19 @@ html.low-end-device .avatar-scan::after {
 }
 
 html.low-end-device .avatar-scan::after {
-    animation: avatarScan 6.5s linear infinite !important;
+    animation: avatarScanComposited 6.5s linear infinite !important;
 }
 
 html.low-end-device .avatar-glow {
-    animation: pulseGlow 7s ease-in-out infinite !important;
-    opacity: 0.32 !important;
+    animation: lowEndAmbientPulse 7s ease-in-out infinite !important;
 }
 
 html.low-end-device .hud-corner {
-    animation: cornerPulse 7s infinite alternate !important;
+    animation: lowEndCornerPulse 7s infinite alternate !important;
 }
 
 html.low-end-device .hero-id-tag {
-    animation: pulseGlow 7s ease-in-out infinite !important;
+    animation: lowEndTextPulse 7s ease-in-out infinite !important;
 }
 
 html.low-end-device .section-header::after {
@@ -2587,7 +2678,7 @@ html.low-end-device .section-header::after {
 }
 
 html.low-end-device .status-icon {
-    animation: pulseGlow 4.8s ease-in-out infinite !important;
+    animation: lowEndTextPulse 4.8s ease-in-out infinite !important;
     box-shadow: 0 0 5px var(--c-sec) !important;
 }
 

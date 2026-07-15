@@ -22,6 +22,7 @@
             transform: perspective(900px) rotateX(58deg) translateY(8%);
             transform-origin: center;
             animation: introGridFlow 14s linear infinite;
+            will-change: transform;
             opacity: 0.82;
             pointer-events: none;
         }
@@ -169,7 +170,10 @@
             pointer-events: none;
             white-space: nowrap;
         }
-        @keyframes introGridFlow { from { background-position: 0 0; } to { background-position: 54px 54px; } }
+        @keyframes introGridFlow {
+            from { transform: perspective(900px) rotateX(58deg) translate3d(0,8%,0); }
+            to { transform: perspective(900px) rotateX(58deg) translate3d(54px,calc(8% + 54px),0); }
+        }
         @keyframes introFloat { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(5%,7%,0) scale(1.08); } }
         @keyframes introPrompt { 0%,100% { opacity: 0.42; } 50% { opacity: 1; } }
         @keyframes introScreenSheen { 0%,100% { transform: translateX(-15%); opacity: 0.24; } 50% { transform: translateX(14%); opacity: 0.42; } }
