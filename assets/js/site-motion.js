@@ -61,6 +61,146 @@
         motionProfileResizeTimer = setTimeout(() => syncDeviceMotionProfile(true), 180);
     }, { passive: true });
 
+    const adaptiveMotionState = {
+        active: false,
+        averageFrameMs: 0,
+        missedFrameRatio: 0,
+        longestFrameMs: 0
+    };
+
+    window.getAdaptiveMotionState = function() {
+        return { ...adaptiveMotionState };
+    };
+
+    function setAdaptiveMotionState(active, metrics = {}) {
+        Object.assign(adaptiveMotionState, metrics);
+        if (adaptiveMotionState.active === active) return;
+        adaptiveMotionState.active = active;
+        document.documentElement.classList.toggle('adaptive-perf-device', active);
+        window.dispatchEvent(new CustomEvent('adaptiveperformancechange', {
+            detail: { ...adaptiveMotionState }
+        }));
+    }
+
+    // Sample short frame windows instead of running another permanent animation loop.
+    (function initAdaptiveFrameBudget() {
+        if (isReducedMotionDevice() || typeof requestAnimationFrame !== 'function') return;
+
+        const SAMPLE_DURATION = 800;
+        let wakeTimer = 0;
+        let sampleFrame = 0;
+        let slowWindows = 0;
+        let healthyWindows = 0;
+        let lastQualityChange = 0;
+
+        function stopSampling() {
+            if (wakeTimer) clearTimeout(wakeTimer);
+            if (sampleFrame) cancelAnimationFrame(sampleFrame);
+            wakeTimer = 0;
+            sampleFrame = 0;
+        }
+
+        function scheduleSample(delay) {
+            if (document.hidden || wakeTimer || sampleFrame) return;
+            wakeTimer = setTimeout(() => {
+                wakeTimer = 0;
+                startSample();
+            }, delay);
+        }
+
+        function renderingIsCovered() {
+            return Boolean(
+                document.getElementById('boot-canvas') ||
+                document.getElementById('init-overlay') ||
+                document.querySelector('.loading-screen.active') ||
+                document.body?.classList.contains('perf-mode')
+            );
+        }
+
+        function startSample() {
+            if (document.hidden || renderingIsCovered()) {
+                scheduleSample(1800);
+                return;
+            }
+
+            let startedAt = 0;
+            let previousAt = 0;
+            let frameCount = 0;
+            let missedFrames = 0;
+            let longestFrameMs = 0;
+
+            function sample(timestamp) {
+                sampleFrame = 0;
+                if (document.hidden) return;
+
+                if (!startedAt) {
+                    startedAt = timestamp;
+                    previousAt = timestamp;
+                } else {
+                    const frameMs = timestamp - previousAt;
+                    previousAt = timestamp;
+                    frameCount += 1;
+                    if (frameMs > 34) missedFrames += 1;
+                    longestFrameMs = Math.max(longestFrameMs, frameMs);
+                }
+
+                if (timestamp - startedAt < SAMPLE_DURATION) {
+                    sampleFrame = requestAnimationFrame(sample);
+                    return;
+                }
+
+                if (frameCount < 12) {
+                    scheduleSample(1600);
+                    return;
+                }
+
+                const averageFrameMs = (timestamp - startedAt) / frameCount;
+                const missedFrameRatio = missedFrames / frameCount;
+                const degraded = averageFrameMs > 25 || missedFrameRatio > 0.18 || longestFrameMs > 130;
+                const severe = missedFrameRatio > 0.45 || longestFrameMs > 180;
+                const healthy = averageFrameMs < 20.5 && missedFrameRatio < 0.08 && longestFrameMs < 90;
+
+                Object.assign(adaptiveMotionState, { averageFrameMs, missedFrameRatio, longestFrameMs });
+
+                if (degraded) {
+                    slowWindows += severe ? 2 : 1;
+                    healthyWindows = 0;
+                } else if (healthy) {
+                    healthyWindows += 1;
+                    slowWindows = Math.max(0, slowWindows - 1);
+                } else {
+                    slowWindows = Math.max(0, slowWindows - 1);
+                    healthyWindows = 0;
+                }
+
+                if (!adaptiveMotionState.active && slowWindows >= 2) {
+                    setAdaptiveMotionState(true, { averageFrameMs, missedFrameRatio, longestFrameMs });
+                    lastQualityChange = performance.now();
+                    slowWindows = 0;
+                } else if (
+                    adaptiveMotionState.active &&
+                    healthyWindows >= 3 &&
+                    performance.now() - lastQualityChange > 16000
+                ) {
+                    setAdaptiveMotionState(false, { averageFrameMs, missedFrameRatio, longestFrameMs });
+                    lastQualityChange = performance.now();
+                    healthyWindows = 0;
+                }
+
+                const nextDelay = adaptiveMotionState.active ? 2600 : (degraded ? 1200 : 4200);
+                scheduleSample(nextDelay);
+            }
+
+            sampleFrame = requestAnimationFrame(sample);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            stopSampling();
+            if (!document.hidden) scheduleSample(1200);
+        });
+        scheduleSample(1400);
+    })();
+
     function initSystemWidgets() {
         setInterval(() => {
             const now = new Date();
@@ -2409,14 +2549,23 @@
         cv.style.display = 'block';
         const ctx = cv.getContext('2d', { alpha: true, desynchronized: true });
         if (!ctx) return;
-        const MAX = lowEnd ? 4 : (isMobile ? 6 : 18);
-        const frameMs = lowEnd ? 100 : (isMobile ? 50 : 33);
         const bootLayer = document.getElementById('boot-canvas');
         const loadingLayers = Array.from(document.querySelectorAll('.loading-screen'));
 
         let W = 0, H = 0, paused = document.hidden, lastTs = 0, resizeTimer = null;
         let frameRequest = 0, wakeTimer = 0;
         let particles = [];
+        let adaptive = Boolean(window.getAdaptiveMotionState?.().active);
+
+        function particleLimit() {
+            if (!adaptive) return lowEnd ? 4 : (isMobile ? 6 : 18);
+            return lowEnd ? 3 : (isMobile ? 4 : 10);
+        }
+
+        function frameInterval() {
+            if (!adaptive) return lowEnd ? 100 : (isMobile ? 50 : 33);
+            return lowEnd ? 125 : (isMobile ? 80 : 50);
+        }
 
         function coveredByTransition() {
             return Boolean(bootLayer?.isConnected) || loadingLayers.some(layer => layer.classList.contains('active'));
@@ -2446,9 +2595,11 @@
             const p = cv.parentElement;
             W = (p && p.offsetWidth  > 0) ? p.offsetWidth  : window.innerWidth;
             H = (p && p.offsetHeight > 0) ? p.offsetHeight : window.innerHeight;
-            const dpr = lowEnd
-                ? maxLongSideDpr(W, H, 1080, 1.6)
-                : fullHdCappedDpr(W, H, isMobile ? 1.7 : 2);
+            const dpr = adaptive
+                ? maxLongSideDpr(W, H, (isMobile || lowEnd) ? 1080 : 1920, lowEnd ? 1.35 : (isMobile ? 1.5 : 1.75))
+                : (lowEnd
+                    ? maxLongSideDpr(W, H, 1080, 1.6)
+                    : fullHdCappedDpr(W, H, isMobile ? 1.7 : 2));
             cv.width  = Math.round(W * dpr);
             cv.height = Math.round(H * dpr);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2528,7 +2679,7 @@
         }
 
         // ── Seed initial spread ──
-        for (let i = 0; i < MAX; i++) particles.push(spawn(true));
+        for (let i = 0; i < particleLimit(); i++) particles.push(spawn(true));
 
         // ── Draw loop ──
         function draw(ts) {
@@ -2536,7 +2687,7 @@
             if (paused) return;
             if (coveredByTransition() || document.body.classList.contains('perf-mode')) {
                 lastTs = ts;
-                scheduleDraw(Math.max(frameMs, 240));
+                scheduleDraw(Math.max(frameInterval(), 240));
                 return;
             }
             const dt = Math.min(ts - (lastTs || ts), 50); // cap at 50ms
@@ -2545,7 +2696,7 @@
             ctx.clearRect(0, 0, W, H);
 
             // Refill
-            while (particles.length < MAX) particles.push(spawn());
+            while (particles.length < particleLimit()) particles.push(spawn());
 
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
@@ -2581,14 +2732,27 @@
                 ctx.fillStyle = toRgba(p.color, Math.min(alpha * 1.2, 1));
                 ctx.fill();
             }
-            scheduleDraw(frameMs);
+            scheduleDraw(frameInterval());
         }
 
         scheduleDraw();
 
+        window.addEventListener('adaptiveperformancechange', event => {
+            const nextAdaptive = Boolean(event.detail?.active);
+            if (adaptive === nextAdaptive) return;
+            adaptive = nextAdaptive;
+            particles.length = Math.min(particles.length, particleLimit());
+            lastTs = 0;
+            resize();
+            stopScheduler();
+            scheduleDraw();
+        });
+
         // Refresh colors on theme change (mutation on :root vars via body class)
         new MutationObserver(() => {
-            palette = getColors();
+            const nextPalette = getColors();
+            if (nextPalette.join('|') === palette.join('|')) return;
+            palette = nextPalette;
             glowSprites.clear();
             particles.forEach(p => {
                 p.color = palette[Math.floor(Math.random() * palette.length)];
@@ -2601,8 +2765,15 @@
     // SCROLL REVEAL OBSERVER
     // ======================================================
     window.scrollObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
-    }, { threshold: 0.10 });
+        entries.forEach(entry => {
+            entry.target.classList.toggle('motion-offscreen', !entry.isIntersecting);
+            if (entry.isIntersecting) entry.target.classList.add('active');
+        });
+    }, { threshold: 0.01, rootMargin: '180px 0px' });
+
+    document.querySelectorAll('.hero, .ticker-wrap, .update-logs').forEach(el => {
+        window.scrollObserver.observe(el);
+    });
 
     // ======================================================
 

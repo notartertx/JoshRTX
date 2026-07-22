@@ -2493,6 +2493,52 @@ body.perf-mode .data-card {
     to { opacity: 0.9; }
 }
 
+/* Keep GPU layers only while pointer-driven card transforms are active. */
+.card {
+    will-change: auto !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .card:hover {
+        will-change: transform !important;
+    }
+}
+
+/* Pause decorative animation trees once their section is outside the viewport. */
+html body .motion-offscreen.motion-offscreen,
+html body .motion-offscreen.motion-offscreen *,
+html body .motion-offscreen.motion-offscreen::before,
+html body .motion-offscreen.motion-offscreen::after,
+html body .motion-offscreen.motion-offscreen *::before,
+html body .motion-offscreen.motion-offscreen *::after {
+    animation-play-state: paused !important;
+}
+
+/* Runtime fallback after sustained frame pressure; every visual remains present. */
+html.adaptive-perf-device .intro-ambient {
+    filter: blur(24px) !important;
+}
+
+html.adaptive-perf-device .nebula-orb {
+    filter: blur(28px) !important;
+}
+
+html.adaptive-perf-device .premium-loader-copy,
+html.adaptive-perf-device .terminal-window,
+html.adaptive-perf-device .card,
+html.adaptive-perf-device .settings-panel,
+html.adaptive-perf-device .modal-box,
+html.adaptive-perf-device .name-box,
+html.adaptive-perf-device .update-logs,
+html.adaptive-perf-device .hero-stats,
+html.adaptive-perf-device .data-card,
+html.adaptive-perf-device .portfolio-brief,
+html.adaptive-perf-device .portfolio-snapshot,
+html.adaptive-perf-device .portfolio-focus,
+html.adaptive-perf-device .portfolio-skill-matrix {
+    backdrop-filter: blur(8px) saturate(1.04) !important;
+}
+
 /* Automatic low-end phone profile: preserve the look, lessen repaint-heavy layers. */
 html.reduced-motion-device #init-overlay::before,
 html.reduced-motion-device #init-overlay::after,
