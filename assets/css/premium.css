@@ -2766,3 +2766,115 @@ html.reduced-motion-device .avatar-scan,
 html.reduced-motion-device .avatar-scan::after {
     display: none !important;
 }
+
+/* Lightweight rendering remains available with ?basic=1. */
+html.basic-mode {
+    scroll-behavior: auto;
+}
+
+html.basic-mode body,
+html.basic-mode body * {
+    text-shadow: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    will-change: auto !important;
+}
+
+html.basic-mode body,
+html.basic-mode body * {
+    cursor: auto !important;
+}
+
+html.basic-mode :is(a, button, [role="button"], input[type="button"], input[type="submit"], select) {
+    cursor: pointer !important;
+}
+
+html.basic-mode :is(input[type="text"], input[type="password"], input[type="email"], textarea) {
+    cursor: text !important;
+}
+
+html.basic-mode :is(.cursor-dot, .cursor-ring, #particleCanvas, #scanlineOverlay, #transition-glow, .glow-core, .nebula-orb, .intro-ambient, .premium-loader-sparks) {
+    display: none !important;
+}
+
+html.basic-mode #init-overlay::before,
+html.basic-mode #init-overlay::after,
+html.basic-mode .intro-card::before,
+html.basic-mode .premium-loader-screen::before,
+html.basic-mode .premium-loader-screen::after {
+    display: none !important;
+    animation: none !important;
+}
+
+html.basic-mode :is(
+    .tech-grid,
+    .hud-corner,
+    .avatar-ring,
+    .avatar-glow,
+    .hero-id-tag,
+    .status-icon,
+    .ticker,
+    .section-header::after,
+    .name-prompt-overlay.active .name-box,
+    .modal.show .modal-box
+) {
+    animation: none !important;
+}
+
+html.basic-mode .tech-grid {
+    opacity: 0.16 !important;
+    transform: none !important;
+    mask-image: none !important;
+}
+
+html.basic-mode :is(.hero-scan-line, .avatar-scan, .avatar-scan::after) {
+    display: none !important;
+    animation: none !important;
+}
+
+html.basic-mode .avatar-ring.r2,
+html.basic-mode .avatar-ring.r3,
+html.basic-mode .loader-ring:nth-child(2),
+html.basic-mode .loader-ring:nth-child(3),
+html.basic-mode .premium-loader-orbit span:nth-child(2),
+html.basic-mode .premium-loader-orbit span:nth-child(3) {
+    display: none !important;
+}
+
+html.basic-mode .loader-ring:first-child,
+html.basic-mode .premium-loader-orbit span:first-child {
+    animation: spinRing 1.8s linear infinite !important;
+}
+
+html.basic-mode .ticker-wrap {
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+}
+
+html.basic-mode .ticker {
+    width: max-content;
+    transform: none !important;
+}
+
+html.basic-mode :is(
+    .card,
+    .data-card,
+    .portfolio-brief,
+    .portfolio-snapshot,
+    .portfolio-focus,
+    .portfolio-skill-matrix,
+    .update-logs,
+    .hero-stats,
+    .settings-panel,
+    .name-box,
+    .terminal-window,
+    .modal-box
+) {
+    background-color: rgba(2, 10, 12, 0.94) !important;
+}
+
+html.basic-mode .term-line {
+    opacity: 1 !important;
+    transform: none !important;
+}

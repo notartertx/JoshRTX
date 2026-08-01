@@ -5,6 +5,10 @@
     let motionProfileCache = null;
     let motionProfileResizeTimer = null;
 
+    function isBasicRenderingMode() {
+        return document.documentElement.classList.contains('basic-mode');
+    }
+
     function isMobileOptimizedDevice() {
         return window.matchMedia(MOBILE_OPT_QUERY).matches;
     }
@@ -36,10 +40,12 @@
         const dpr = window.devicePixelRatio || 1;
         const shortSide = Math.min(window.innerWidth || 999, window.innerHeight || 999);
         const constrainedPhone = mobile && (mem <= 4 || cores <= 4 || (shortSide <= 430 && dpr >= 2.25));
+        const basic = isBasicRenderingMode();
         motionProfileCache = {
             mobile,
             reduced,
-            lowEnd: forcedLowEnd || reduced || constrainedPhone
+            basic,
+            lowEnd: basic || forcedLowEnd || reduced || constrainedPhone
         };
         return motionProfileCache;
     }
@@ -84,7 +90,7 @@
 
     // Sample short frame windows instead of running another permanent animation loop.
     (function initAdaptiveFrameBudget() {
-        if (isReducedMotionDevice() || typeof requestAnimationFrame !== 'function') return;
+        if (isBasicRenderingMode() || isReducedMotionDevice() || typeof requestAnimationFrame !== 'function') return;
 
         const SAMPLE_DURATION = 800;
         let wakeTimer = 0;
@@ -682,7 +688,8 @@
 
         const motionProfile = syncDeviceMotionProfile();
         const mobileBoot = motionProfile.mobile;
-        const lowEndBoot = motionProfile.lowEnd;
+        const basicBoot = motionProfile.basic;
+        const lowEndBoot = basicBoot || motionProfile.lowEnd;
         const W = window.innerWidth;
         const H = window.innerHeight;
         const dpr = lowEndBoot
@@ -717,7 +724,16 @@
             subline: bootText('cms-intro-boot-subline', 'CODE / GAMES / PROJECTS')
         };
 
-        const T = lowEndBoot ? {
+        const T = basicBoot ? {
+            logoIn: 20,
+            meshIn: 9999,
+            railIn: 100,
+            stagesIn: 160,
+            titleIn: 280,
+            subtitleIn: 420,
+            bloom: 9999,
+            endAt: 920
+        } : lowEndBoot ? {
             logoIn: 80,
             meshIn: 210,
             railIn: 320,
@@ -752,20 +768,20 @@
             bootText('cms-intro-boot-stage-4', 'Opening portfolio')
         ];
 
-        const particles = Array.from({ length: lowEndBoot ? 3 : (mobileBoot ? 10 : (W < 760 ? 18 : 42)) }, () => ({
+        const particles = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 3 : (mobileBoot ? 10 : (W < 760 ? 18 : 42))) }, () => ({
             x: Math.random() * W,
             y: Math.random() * H,
             r: (lowEndBoot ? 0.35 : 0.35) + Math.random() * (lowEndBoot ? 0.85 : 1.6),
             a: (lowEndBoot ? 0.08 : 0.14) + Math.random() * (lowEndBoot ? 0.18 : 0.38),
             s: (lowEndBoot ? 0.025 : 0.05) + Math.random() * (lowEndBoot ? 0.08 : 0.22)
         }));
-        const mesh = Array.from({ length: lowEndBoot ? 2 : (mobileBoot ? 4 : (W < 760 ? 7 : 14)) }, () => ({
+        const mesh = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 2 : (mobileBoot ? 4 : (W < 760 ? 7 : 14))) }, () => ({
             x: Math.random() * W,
             y: Math.random() * H,
             vx: (lowEndBoot ? -0.025 : -0.08) + Math.random() * (lowEndBoot ? 0.05 : 0.16),
             vy: (lowEndBoot ? -0.018 : -0.05) + Math.random() * (lowEndBoot ? 0.036 : 0.10)
         }));
-        const streaks = Array.from({ length: lowEndBoot ? 1 : (mobileBoot ? 3 : (W < 760 ? 5 : 10)) }, () => ({
+        const streaks = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 1 : (mobileBoot ? 3 : (W < 760 ? 5 : 10))) }, () => ({
             x: Math.random() * W,
             y: Math.random() * H,
             len: (lowEndBoot ? 70 : 80) + Math.random() * (lowEndBoot ? 90 : 180),
@@ -779,7 +795,7 @@
         let stagePlayed = -1;
         let titlePlayed = false;
         let bloomPlayed = false;
-        const bootFrameMs = lowEndBoot ? 50 : 33;
+        const bootFrameMs = basicBoot ? 50 : (lowEndBoot ? 50 : 33);
         const droneRef = SFX.introBed ? SFX.introBed() : SFX.bootDrone();
         const staticBootBg = buildStaticBootBackground(lowEndBoot);
 
@@ -1147,7 +1163,7 @@
             if (bootWakeTimer) clearTimeout(bootWakeTimer);
             raf = null;
             bootWakeTimer = 0;
-            canvas.style.transition = `opacity ${lowEndBoot ? 0.28 : (mobileBoot ? 0.42 : 0.75)}s ease`;
+            canvas.style.transition = `opacity ${basicBoot ? 0.18 : (lowEndBoot ? 0.28 : (mobileBoot ? 0.42 : 0.75))}s ease`;
             canvas.style.opacity = '0';
             const subtextEl = document.getElementById('subtext');
             if (subtextEl) subtextEl.style.opacity = '0';
@@ -1173,14 +1189,14 @@
                         tgEl.style.pointerEvents = 'none';
                     }
                     if (lv) {
-                        lv.style.transition = 'opacity 0.9s ease-out';
+                        lv.style.transition = `opacity ${basicBoot ? 0.3 : 0.9}s ease-out`;
                         lv.style.opacity = '1';
                         lv.style.pointerEvents = 'auto';
                     }
                     loadLoginChangelogs();
-                    setTimeout(() => { const t = document.getElementById('transition-glow'); if (t) t.remove(); }, 1000);
-                }, 180);
-            }, lowEndBoot ? 220 : (mobileBoot ? 320 : 520));
+                    setTimeout(() => { const t = document.getElementById('transition-glow'); if (t) t.remove(); }, basicBoot ? 400 : 1000);
+                }, basicBoot ? 80 : 180);
+            }, basicBoot ? 140 : (lowEndBoot ? 220 : (mobileBoot ? 320 : 520)));
         }
 
         function scheduleBootFrame() {
@@ -1261,23 +1277,24 @@
         const overlay = document.getElementById('init-overlay');
         overlay.addEventListener('click', () => {
             const profile = syncDeviceMotionProfile();
+            const basicIntro = profile.basic;
             const lowEndIntro = profile.lowEnd;
             SFX.init();
             if (SFX.introTap) SFX.introTap(); else SFX.click();
-            overlay.style.transition = `opacity ${lowEndIntro ? 0.34 : 0.55}s ease`;
+            overlay.style.transition = `opacity ${basicIntro ? 0.18 : (lowEndIntro ? 0.34 : 0.55)}s ease`;
             overlay.style.opacity = '0';
             setTimeout(async () => {
                 await Promise.race([
                     introCmsReady || Promise.resolve(false),
-                    new Promise(resolve => setTimeout(resolve, lowEndIntro ? 460 : 1100))
+                    new Promise(resolve => setTimeout(resolve, basicIntro ? 220 : (lowEndIntro ? 460 : 1100)))
                 ]);
                 overlay.remove();
                 // Fade the boot canvas in from black.
                 const canvas = document.getElementById('boot-canvas');
-                if (canvas) { canvas.style.opacity = '0'; canvas.style.transition = `opacity ${lowEndIntro ? 0.28 : 0.5}s ease`; }
+                if (canvas) { canvas.style.opacity = '0'; canvas.style.transition = `opacity ${basicIntro ? 0.18 : (lowEndIntro ? 0.28 : 0.5)}s ease`; }
                 startBootAnimation();
                 if (canvas) { void canvas.offsetWidth; setTimeout(() => { canvas.style.opacity = '1'; }, 30); }
-            }, lowEndIntro ? 360 : 600);
+            }, basicIntro ? 220 : (lowEndIntro ? 360 : 600));
         }, { once: true });
     });
 
@@ -2443,7 +2460,7 @@
     let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
     let ringX = mouseX, ringY = mouseY;
 
-    if (window.matchMedia("(pointer: fine)").matches && cursorDot && cursorRing) {
+    if (!isBasicRenderingMode() && window.matchMedia("(pointer: fine)").matches && cursorDot && cursorRing) {
         let ringFrame = 0;
         let cursorVisible = false;
         const root = document.documentElement;
@@ -2540,7 +2557,7 @@
         const profile = getMotionProfile();
         const isMobile = profile.mobile;
         const lowEnd = profile.lowEnd;
-        if (profile.reduced) {
+        if (profile.basic || profile.reduced) {
             cv.hidden = true;
             cv.style.display = 'none';
             return;
@@ -2781,6 +2798,7 @@
     //  IMMERSIVE 3D EFFECTS ENGINE
     // ═══════════════════════════════════════════════════
     (function() {
+        if (isBasicRenderingMode()) return;
         const isTouch = window.matchMedia('(pointer:coarse)').matches;
         const pointerWrites = new WeakMap();
 

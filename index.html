@@ -9,6 +9,9 @@
       <script>
           (function() {
               const root = document.documentElement;
+              const basicEffects = new URLSearchParams(window.location.search).get('basic') === '1';
+              root.classList.toggle('basic-mode', basicEffects);
+              root.dataset.renderMode = basicEffects ? 'basic' : 'full';
               const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
               const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
               const mem = Number(navigator.deviceMemory || 8);
@@ -18,14 +21,18 @@
               const height = window.innerHeight || screen.height || 999;
               const shortSide = Math.min(width, height);
               const mobile = coarse || width <= 768;
-              const lowEnd = reduced || (mobile && (mem <= 4 || cores <= 4 || (shortSide <= 430 && dpr >= 2.25)));
+              const lowEnd = basicEffects || reduced || (mobile && (mem <= 4 || cores <= 4 || (shortSide <= 430 && dpr >= 2.25)));
               if (mobile) root.classList.add('mobile-optimized-device');
               if (lowEnd) root.classList.add('low-end-device');
+
+              if (!basicEffects) {
+                  const fontLink = document.createElement('link');
+                  fontLink.rel = 'stylesheet';
+                  fontLink.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Playfair+Display:wght@400;700&family=Bebas+Neue&display=swap';
+                  document.head.appendChild(fontLink);
+              }
           })();
       </script>
-
-      <!-- Fonts -->
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Playfair+Display:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 
       <!-- Site styles (load order matters) -->
       <link rel="stylesheet" href="assets/css/variables.css">
@@ -34,7 +41,7 @@
       <link rel="stylesheet" href="assets/css/components.css">
       <link rel="stylesheet" href="assets/css/interactions.css">
       <link rel="stylesheet" href="assets/css/responsive.css">
-      <link rel="stylesheet" href="assets/css/premium.css?v=fps-stable-6">
+      <link rel="stylesheet" href="assets/css/premium.css?v=full-default-1">
 
       <!-- Theme setup before first paint -->
       <script>
@@ -815,7 +822,7 @@
       <script src="assets/js/sfx.js"></script>
       <script src="assets/js/ui.js?v=top-settings-premium-1"></script>
       <script type="module" src="assets/js/firebase.js"></script>
-      <script src="assets/js/site-motion.js?v=fps-stable-6"></script>
+      <script src="assets/js/site-motion.js?v=full-default-1"></script>
 
   </body>
   </html>
