@@ -26,8 +26,6 @@
       <link rel="stylesheet" href="assets/css/interactions.css">
       <link rel="stylesheet" href="assets/css/responsive.css">
       <link rel="stylesheet" href="assets/css/premium.css?v=direct-entry-1">
-      <link rel="stylesheet" href="assets/css/entry-overhaul.css?v=entry-overhaul-2">
-      <link rel="preload" as="image" href="assets/images/joshrtx-workspace-hero.webp" type="image/webp">
 
       <!-- Theme setup before first paint -->
       <script>
@@ -172,75 +170,57 @@
 <div id="vignetteOverlay"></div>
 
 <div id="login-view">
-    <section class="hero entry-hero" aria-labelledby="title">
-        <div class="entry-visual-shade" aria-hidden="true"></div>
-
-        <header class="entry-nav">
-            <div class="entry-brand">
-                <div class="hero-avatar hover-target" aria-hidden="true">
-                    <div class="avatar-core">JR</div>
-                </div>
-                <div class="entry-brand-copy">
-                    <strong>JoshRTX</strong>
-                    <span>Portfolio / 2026</span>
-                </div>
-            </div>
-            <div class="entry-status">
-                <span class="entry-status-dot" aria-hidden="true"></span>
-                <span>Portfolio online</span>
-            </div>
-        </header>
-
-        <div class="entry-copy">
-            <div class="hero-id-tag">&gt; PERSONAL_BUILD // JOSHRTX_v4.2</div>
-            <h1 id="title">JoshRTX</h1>
-            <p class="entry-summary">Code, games, and digital experiments from a BSIT student building one project at a time.</p>
-            <div class="hero-tags" aria-label="Current focus">
-                <span class="htag">BSIT Student</span>
-                <span class="htag-sep" aria-hidden="true">/</span>
-                <span class="htag">Gamer</span>
-                <span class="htag-sep" aria-hidden="true">/</span>
-                <span class="htag">Frontend Learner</span>
-                <span class="htag-sep" aria-hidden="true">/</span>
-                <span class="htag">Learning Developer</span>
-            </div>
-            <div class="entry-actions">
-                <button class="btn hover-target" id="enterBtn" onclick="showNamePrompt()">
-                    <span>Enter portfolio</span>
-                    <span class="entry-arrow" aria-hidden="true">&rarr;</span>
-                </button>
-                <a class="entry-notes-link hover-target" href="#entry-notes">Latest build note</a>
-            </div>
+    <section class="hero">
+        <div class="hero-hud">
+            <div class="hud-corner tl"></div>
+            <div class="hud-corner tr"></div>
+            <div class="hud-corner bl"></div>
+            <div class="hud-corner br"></div>
         </div>
-
-        <div class="entry-bottom">
-            <div class="entry-facts">
-                <div class="hero-stats" aria-label="Portfolio stats">
-                    <div class="hstat"><span class="hstat-val">2</span><span class="hstat-lbl">Projects</span></div>
-                    <div class="hstat-div"></div>
-                    <div class="hstat"><span class="hstat-val">1+</span><span class="hstat-lbl">Coding</span></div>
-                    <div class="hstat-div"></div>
-                    <div class="hstat"><span class="hstat-val">BSIT</span><span class="hstat-lbl">Course</span></div>
-                    <div class="hstat-div"></div>
-                    <div class="hstat"><span class="hstat-val" id="heroUptime">0s</span><span class="hstat-lbl">Uptime</span></div>
-                </div>
-                <div class="entry-tools">
-                    <span class="entry-tools-label">Working with</span>
-                    <div class="hero-skills">
-                        <span class="skill-badge">HTML/CSS</span>
-                        <span class="skill-badge">JavaScript</span>
-                        <span class="skill-badge">Game Dev</span>
-                        <span class="skill-badge">Roblox Studio</span>
-                        <span class="skill-badge">UI/UX</span>
-                        <span class="skill-badge">Web Design</span>
-                    </div>
-                </div>
+        <div class="hero-scan-line"></div>
+        <div class="hero-id-tag">> PERSONAL_BUILD // JOSHRTX_v4.2</div>
+        <div class="hero-avatar">
+            <div class="avatar-glow"></div>
+            <div class="avatar-rings">
+                <div class="avatar-ring r1"></div>
+                <div class="avatar-ring r2"></div>
+                <div class="avatar-ring r3"></div>
             </div>
-
-            <aside class="update-logs entry-notes" id="entry-notes" aria-labelledby="entryNotesTitle">
-                <h3 id="entryNotesTitle">Latest build note</h3>
-                <div class="log-entries" id="changelogFeed"><p>Loading build notes...</p></div>
-            </aside>
+            <div class="avatar-core">JR</div>
+            <div class="avatar-scan"></div>
+        </div>
+        <h1 id="title">JoshRTX</h1>
+        <div class="hero-tags">
+            <span class="htag">BSIT Student</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Gamer</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Frontend Learner</span>
+            <span class="htag-sep">◆</span>
+            <span class="htag">Learning Developer</span>
+        </div>
+        <div class="hero-stats">
+            <div class="hstat"><span class="hstat-val">2</span><span class="hstat-lbl">Projects</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val">1+</span><span class="hstat-lbl">Coding</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val">BSIT</span><span class="hstat-lbl">Course</span></div>
+            <div class="hstat-div"></div>
+            <div class="hstat"><span class="hstat-val" id="heroUptime">0s</span><span class="hstat-lbl">Uptime</span></div>
+        </div>
+        <button class="btn hover-target" id="enterBtn" onclick="showNamePrompt()">Enter Site</button>
+        <div class="hero-skills">
+            <span class="skill-badge">HTML/CSS</span>
+            <span class="skill-badge">JavaScript</span>
+            <span class="skill-badge">Game Dev</span>
+            <span class="skill-badge">Roblox Studio</span>
+            <span class="skill-badge">UI/UX</span>
+            <span class="skill-badge">Web Design</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="update-logs">
+            <h3><span>>></span> Build Notes</h3>
+            <div class="log-entries" id="changelogFeed"><p style="color:#52525b;font-style:italic;">Loading build notes...</p></div>
         </div>
     </section>
 </div>
