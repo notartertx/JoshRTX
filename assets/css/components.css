@@ -43,7 +43,7 @@
         .hero-id-tag { font-family:'Courier New',monospace; font-size:0.7rem; letter-spacing:3px; color:rgba(var(--c-prim-rgb),0.5); text-transform:uppercase; margin-bottom:8px; animation:pulseGlow 4s infinite; }
         .hero-divider { width:80px; height:1px; background:linear-gradient(90deg,transparent,var(--c-prim),transparent); margin:18px auto 0 auto; }
 
-        #login-view { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; opacity:0; transition:opacity 0.8s ease-out; pointer-events:none; }
+        #login-view { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; opacity:1; transition:opacity 0.8s ease-out; pointer-events:auto; }
         #main-view { display:none; opacity:0; transition:opacity 1.5s ease-out; position:relative; }
 
         .hero { text-align:center; position:relative; z-index:2; width:100%; display:flex; flex-direction:column; align-items:center; }

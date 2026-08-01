@@ -134,7 +134,6 @@ body {
 }
 
 .hero-id-tag,
-.intro-eyebrow,
 .hstat-lbl,
 .skill-badge,
 .ticker-item,
@@ -361,11 +360,11 @@ footer {
 }
 
 /* Full-screen overlays cover these layers, so suspend their offscreen animation work. */
-body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+body:has(:is(.loading-screen.active, .name-prompt-overlay.active, .modal.show))
     :is(.bg, #login-view, #main-view) *,
-body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+body:has(:is(.loading-screen.active, .name-prompt-overlay.active, .modal.show))
     :is(.bg, #login-view, #main-view) *::before,
-body:has(:is(#boot-canvas, .loading-screen.active, .name-prompt-overlay.active, .modal.show))
+body:has(:is(.loading-screen.active, .name-prompt-overlay.active, .modal.show))
     :is(.bg, #login-view, #main-view) *::after {
     animation-play-state: paused !important;
 }
@@ -2044,91 +2043,12 @@ body.perf-mode .data-card {
         -webkit-font-smoothing: antialiased;
     }
 
-    #init-overlay,
     #login-view,
     #main-view,
     .loading-screen {
         min-height: 100svh;
     }
 
-    #init-overlay {
-        padding: max(18px, env(safe-area-inset-top, 0px)) 18px max(18px, env(safe-area-inset-bottom, 0px));
-    }
-
-    .intro-status {
-        width: min(340px, calc(100vw - 48px));
-        gap: 10px 14px;
-        line-height: 1.45;
-        font-size: 0.66rem;
-        letter-spacing: 0.14em;
-    }
-
-    .intro-card {
-        box-sizing: border-box !important;
-        width: min(680px, calc(100vw - 34px)) !important;
-        max-width: calc(100vw - 34px) !important;
-        padding: clamp(28px, 8vw, 46px) 16px !important;
-        text-align: center !important;
-    }
-
-    .intro-eyebrow {
-        max-width: 100% !important;
-        letter-spacing: 0.18em !important;
-    }
-
-    .intro-logo-row {
-        display: grid !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        justify-items: center !important;
-        gap: 12px !important;
-    }
-
-    .intro-logo-mark {
-        margin: 0 auto !important;
-    }
-
-    .intro-logo-text {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        font-size: clamp(2.1rem, 10vw, 2.85rem) !important;
-        line-height: 1 !important;
-        text-align: center !important;
-        white-space: nowrap !important;
-    }
-
-    .intro-subcopy {
-        width: min(100%, 300px) !important;
-        max-width: 100% !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        line-height: 1.45 !important;
-        white-space: normal !important;
-        overflow-wrap: break-word !important;
-    }
-
-    .intro-specs {
-        display: grid !important;
-        grid-template-columns: repeat(2, max-content) !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-
-    .intro-specs span:nth-child(3) {
-        grid-column: 1 / -1 !important;
-        justify-self: center !important;
-    }
-
-    .intro-footer {
-        width: calc(100vw - 44px);
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-        line-height: 1.4;
-    }
 
     .top-controls-bar {
         box-sizing: border-box;
@@ -2432,18 +2352,6 @@ body.perf-mode .data-card {
 }
 
 @media (max-width: 380px) {
-    .intro-logo-text {
-        font-size: clamp(2.1rem, 12vw, 3.1rem);
-    }
-
-    .intro-specs {
-        grid-template-columns: 1fr;
-    }
-
-    .intro-specs span {
-        justify-self: center;
-    }
-
     .hero h1 {
         font-size: clamp(2.35rem, 14vw, 3.8rem);
     }
@@ -2514,11 +2422,6 @@ html body .motion-offscreen.motion-offscreen *::after {
     animation-play-state: paused !important;
 }
 
-/* Runtime fallback after sustained frame pressure; every visual remains present. */
-html.adaptive-perf-device .intro-ambient {
-    filter: blur(24px) !important;
-}
-
 html.adaptive-perf-device .nebula-orb {
     filter: blur(28px) !important;
 }
@@ -2540,26 +2443,11 @@ html.adaptive-perf-device .portfolio-skill-matrix {
 }
 
 /* Automatic low-end phone profile: preserve the look, lessen repaint-heavy layers. */
-html.reduced-motion-device #init-overlay::before,
-html.reduced-motion-device #init-overlay::after,
-html.reduced-motion-device .intro-card::before,
-html.reduced-motion-device .intro-logo-mark,
-html.reduced-motion-device .intro-enter,
 html.reduced-motion-device .premium-loader-screen::before,
 html.reduced-motion-device .premium-loader-sparks i,
 html.reduced-motion-device .section-header::after,
 html.reduced-motion-device .status-icon {
     animation: none !important;
-}
-
-html.low-end-device .intro-ambient {
-    animation-duration: 18s !important;
-    filter: blur(18px) !important;
-    opacity: 0.14 !important;
-}
-
-html.low-end-device .intro-ambient-c {
-    opacity: 0.07 !important;
 }
 
 html.low-end-device .premium-loader-sparks,
@@ -2571,31 +2459,6 @@ html.low-end-device .avatar-ring.r2,
 html.low-end-device .avatar-ring.r3 {
     display: block !important;
     opacity: 0.28 !important;
-}
-
-html.low-end-device #init-overlay::before {
-    opacity: 0.34 !important;
-    animation-duration: 34s !important;
-}
-
-html.low-end-device #init-overlay::after {
-    opacity: 0.16 !important;
-    mix-blend-mode: normal !important;
-    animation-duration: 14s !important;
-}
-
-html.low-end-device .intro-card::before {
-    opacity: 0.14 !important;
-    animation-duration: 10s !important;
-}
-
-html.low-end-device .intro-logo-mark {
-    animation-duration: 5.5s !important;
-    box-shadow: 0 0 16px rgba(var(--c-prim-rgb),0.16), inset 0 0 14px rgba(var(--c-prim-rgb),0.06) !important;
-}
-
-html.low-end-device .intro-enter {
-    animation-duration: 3.2s !important;
 }
 
 html.low-end-device .premium-loader-screen::before {
@@ -2803,13 +2666,10 @@ html.basic-mode :is(input[type="text"], input[type="password"], input[type="emai
     cursor: text !important;
 }
 
-html.basic-mode :is(.cursor-dot, .cursor-ring, #particleCanvas, #scanlineOverlay, #transition-glow, .glow-core, .nebula-orb, .intro-ambient, .premium-loader-sparks) {
+html.basic-mode :is(.cursor-dot, .cursor-ring, #particleCanvas, #scanlineOverlay, .glow-core, .nebula-orb, .premium-loader-sparks) {
     display: none !important;
 }
 
-html.basic-mode #init-overlay::before,
-html.basic-mode #init-overlay::after,
-html.basic-mode .intro-card::before,
 html.basic-mode .premium-loader-screen::before,
 html.basic-mode .premium-loader-screen::after {
     display: none !important;

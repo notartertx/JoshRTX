@@ -22,10 +22,10 @@
       <link rel="stylesheet" href="assets/css/variables.css">
       <link rel="stylesheet" href="assets/css/base.css">
       <link rel="stylesheet" href="assets/css/effects.css?v=fps-stable-5">
-      <link rel="stylesheet" href="assets/css/components.css">
+      <link rel="stylesheet" href="assets/css/components.css?v=direct-entry-1">
       <link rel="stylesheet" href="assets/css/interactions.css">
       <link rel="stylesheet" href="assets/css/responsive.css">
-      <link rel="stylesheet" href="assets/css/premium.css?v=basic-only-1">
+      <link rel="stylesheet" href="assets/css/premium.css?v=direct-entry-1">
 
       <!-- Theme setup before first paint -->
       <script>
@@ -48,48 +48,6 @@
   <div id="saveToast" class="save-toast"></div>
 
 
-
-<!-- Click-to-start overlay for browser audio unlock -->
-<div id="init-overlay">
-    <div class="intro-ambient intro-ambient-a"></div>
-    <div class="intro-ambient intro-ambient-b"></div>
-    <div class="intro-ambient intro-ambient-c"></div>
-    <div class="intro-frame">
-        <span class="intro-corner tl"></span>
-        <span class="intro-corner tr"></span>
-        <span class="intro-corner bl"></span>
-        <span class="intro-corner br"></span>
-    </div>
-    <div class="intro-status">
-        <span id="introStatus1Text">JoshRTX v4.2</span>
-        <span id="introStatus2Text">Portfolio ready</span>
-        <span id="introStatus3Text">Sound unlock</span>
-    </div>
-    <div class="intro-card">
-        <div class="intro-eyebrow" id="introEyebrowText">Personal webspace</div>
-        <div class="intro-logo-row">
-            <span class="intro-logo-mark" id="introLogoMarkText">JR</span>
-            <span class="intro-logo-text" id="introLogoTitleText">JoshRTX</span>
-        </div>
-        <div class="intro-subcopy" id="introSubcopyText">Projects, games, notes, and experiments</div>
-        <div class="intro-specs">
-            <span id="introSpec1Text">HTML/CSS</span>
-            <span id="introSpec2Text">JavaScript</span>
-            <span id="introSpec3Text">Roblox Studio</span>
-        </div>
-        <div class="intro-enter">
-            <span class="intro-enter-line"></span>
-            <span id="introEnterText">Tap to launch</span>
-            <span class="intro-enter-line"></span>
-        </div>
-    </div>
-    <div class="intro-footer" id="introFooterText">Built by Josh // personal site</div>
-</div>
-
-<!-- FULL-SCREEN BOOT CANVAS -->
-<canvas id="boot-canvas"></canvas>
-<div id="subtext"></div>
-<div id="transition-glow"></div>
 
 <div id="adminAuthTransition" class="loading-screen premium-loader-screen admin-auth-loader">
     <div class="premium-loader-shell">
@@ -695,43 +653,6 @@
             <label style="color:#a1a1aa;font-size:0.8rem;font-family:monospace;">Hero Tag</label>
             <input type="text" id="titleHeroTagInput" class="admin-input" placeholder="> PERSONAL_BUILD // JOSHRTX_v4.2" style="text-align:left;padding:8px;margin-top:5px;">
         </div>
-        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">INTRO MENU</h4>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 1</label><input type="text" id="introStatus1Input" class="admin-input" placeholder="JoshRTX v4.2" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 2</label><input type="text" id="introStatus2Input" class="admin-input" placeholder="Portfolio ready" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Status 3</label><input type="text" id="introStatus3Input" class="admin-input" placeholder="Sound unlock" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Eyebrow</label><input type="text" id="introEyebrowInput" class="admin-input" placeholder="Personal webspace" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Logo Mark</label><input type="text" id="introLogoMarkInput" class="admin-input" placeholder="JR" maxlength="6" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Intro Title</label><input type="text" id="introLogoTitleInput" class="admin-input" placeholder="JoshRTX" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
-        <div style="margin-bottom:10px;">
-            <label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Intro Subcopy</label>
-            <input type="text" id="introSubcopyInput" class="admin-input" placeholder="Projects, games, notes, and experiments" style="text-align:left;padding:8px;margin-top:5px;">
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 1</label><input type="text" id="introSpec1Input" class="admin-input" placeholder="HTML/CSS" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 2</label><input type="text" id="introSpec2Input" class="admin-input" placeholder="JavaScript" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Spec 3</label><input type="text" id="introSpec3Input" class="admin-input" placeholder="Roblox Studio" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Launch Text</label><input type="text" id="introEnterInput" class="admin-input" placeholder="Tap to launch" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Footer</label><input type="text" id="introFooterInput" class="admin-input" placeholder="Built by Josh // personal site" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
-        <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">INTRO LOADING</h4>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Frame Label</label><input type="text" id="introBootFrameInput" class="admin-input" placeholder="JOSHRTX.PORTFOLIO" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Logo Mark</label><input type="text" id="introBootLogoInput" class="admin-input" placeholder="JR" maxlength="8" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Panel Label</label><input type="text" id="introBootPanelInput" class="admin-input" placeholder="SYSTEM HANDOFF" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Title Subline</label><input type="text" id="introBootSublineInput" class="admin-input" placeholder="CODE / GAMES / PROJECTS" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;">
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 1</label><input type="text" id="introBootStage1Input" class="admin-input" placeholder="Booting canvas" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 2</label><input type="text" id="introBootStage2Input" class="admin-input" placeholder="Loading projects" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 3</label><input type="text" id="introBootStage3Input" class="admin-input" placeholder="Tuning interface" style="text-align:left;padding:8px;margin-top:5px;"></div>
-            <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Stage 4</label><input type="text" id="introBootStage4Input" class="admin-input" placeholder="Opening portfolio" style="text-align:left;padding:8px;margin-top:5px;"></div>
-        </div>
         <h4 style="color:#06b6d4;font-family:monospace;margin:14px 0 10px;">TAGS</h4>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
             <div><label style="color:#a1a1aa;font-size:0.75rem;font-family:monospace;">Tag 1</label><input type="text" id="titleTag1Input" class="admin-input" placeholder="BSIT Student" style="text-align:left;padding:8px;margin-top:5px;"></div>
@@ -806,7 +727,7 @@
       <script src="assets/js/sfx.js"></script>
       <script src="assets/js/ui.js?v=top-settings-premium-1"></script>
       <script type="module" src="assets/js/firebase.js"></script>
-      <script src="assets/js/site-motion.js?v=basic-only-1"></script>
+      <script src="assets/js/site-motion.js?v=direct-entry-1"></script>
 
   </body>
   </html>

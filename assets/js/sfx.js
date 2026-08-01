@@ -4,7 +4,7 @@
     // ======================================================
     // SOUND ENGINE — Procedural Web Audio API
     // All sounds are synthesized, no external files needed.
-    // AudioContext is created on first user gesture (init-overlay click)
+    // AudioContext is created on the first user gesture.
     // ======================================================
     const SFX = (() => {
         let ctx = null;

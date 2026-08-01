@@ -116,8 +116,6 @@
 
         function renderingIsCovered() {
             return Boolean(
-                document.getElementById('boot-canvas') ||
-                document.getElementById('init-overlay') ||
                 document.querySelector('.loading-screen.active') ||
                 document.body?.classList.contains('perf-mode')
             );
@@ -680,557 +678,10 @@
     };
 
     // ======================================================
-    // Intro animation
+    // CMS preload
     // ======================================================
-    function startBootAnimation() {
-        const canvas = document.getElementById('boot-canvas');
-        if (!canvas) return;
 
-        const motionProfile = syncDeviceMotionProfile();
-        const mobileBoot = motionProfile.mobile;
-        const basicBoot = motionProfile.basic;
-        const lowEndBoot = basicBoot || motionProfile.lowEnd;
-        const W = window.innerWidth;
-        const H = window.innerHeight;
-        const dpr = lowEndBoot
-            ? maxLongSideDpr(W, H, 1080, 1.4)
-            : fullHdCappedDpr(W, H, mobileBoot ? 2.25 : 2.5);
-        canvas.width = Math.round(W * dpr);
-        canvas.height = Math.round(H * dpr);
-        canvas.style.width = W + 'px';
-        canvas.style.height = H + 'px';
-
-        const ctx = canvas.getContext('2d', { alpha: false });
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        const cx = W / 2;
-        const cy = H / 2;
-        const cs = getComputedStyle(document.documentElement);
-        const primRgb = (cs.getPropertyValue('--c-prim-rgb') || '6,182,212').trim();
-        const secRgb = (cs.getPropertyValue('--c-sec-rgb') || '34,197,94').trim();
-        const accRgb = (cs.getPropertyValue('--c-acc-rgb') || '209,250,229').trim();
-        const prim = `rgb(${primRgb})`;
-        const sec = `rgb(${secRgb})`;
-        const title = (window.adminData?.textEditor?.['cms-hero-title'] || document.getElementById('title')?.textContent || 'JoshRTX').trim();
-        const introText = window.adminData?.textEditor || {};
-        const bootText = (key, fallback) => {
-            const value = String(introText[key] || fallback || '').trim();
-            return value || fallback;
-        };
-        const bootCopy = {
-            frame: bootText('cms-intro-boot-frame', 'JOSHRTX.PORTFOLIO'),
-            logo: bootText('cms-intro-boot-logo', 'JR'),
-            panel: bootText('cms-intro-boot-panel', 'SYSTEM HANDOFF'),
-            subline: bootText('cms-intro-boot-subline', 'CODE / GAMES / PROJECTS')
-        };
-
-        const T = basicBoot ? {
-            logoIn: 20,
-            meshIn: 9999,
-            railIn: 100,
-            stagesIn: 160,
-            titleIn: 280,
-            subtitleIn: 420,
-            bloom: 9999,
-            endAt: 920
-        } : lowEndBoot ? {
-            logoIn: 80,
-            meshIn: 210,
-            railIn: 320,
-            stagesIn: 460,
-            titleIn: 760,
-            subtitleIn: 1040,
-            bloom: 1760,
-            endAt: 2280
-        } : mobileBoot ? {
-            logoIn: 160,
-            meshIn: 420,
-            railIn: 700,
-            stagesIn: 940,
-            titleIn: 1580,
-            subtitleIn: 2180,
-            bloom: 3340,
-            endAt: 4180
-        } : {
-            logoIn: 220,
-            meshIn: 560,
-            railIn: 950,
-            stagesIn: 1260,
-            titleIn: 2140,
-            subtitleIn: 2940,
-            bloom: 4620,
-            endAt: 5750
-        };
-        const stages = [
-            bootText('cms-intro-boot-stage-1', 'Booting canvas'),
-            bootText('cms-intro-boot-stage-2', 'Loading projects'),
-            bootText('cms-intro-boot-stage-3', 'Tuning interface'),
-            bootText('cms-intro-boot-stage-4', 'Opening portfolio')
-        ];
-
-        const particles = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 3 : (mobileBoot ? 10 : (W < 760 ? 18 : 42))) }, () => ({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            r: (lowEndBoot ? 0.35 : 0.35) + Math.random() * (lowEndBoot ? 0.85 : 1.6),
-            a: (lowEndBoot ? 0.08 : 0.14) + Math.random() * (lowEndBoot ? 0.18 : 0.38),
-            s: (lowEndBoot ? 0.025 : 0.05) + Math.random() * (lowEndBoot ? 0.08 : 0.22)
-        }));
-        const mesh = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 2 : (mobileBoot ? 4 : (W < 760 ? 7 : 14))) }, () => ({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            vx: (lowEndBoot ? -0.025 : -0.08) + Math.random() * (lowEndBoot ? 0.05 : 0.16),
-            vy: (lowEndBoot ? -0.018 : -0.05) + Math.random() * (lowEndBoot ? 0.036 : 0.10)
-        }));
-        const streaks = Array.from({ length: basicBoot ? 0 : (lowEndBoot ? 1 : (mobileBoot ? 3 : (W < 760 ? 5 : 10))) }, () => ({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            len: (lowEndBoot ? 70 : 80) + Math.random() * (lowEndBoot ? 90 : 180),
-            speed: (lowEndBoot ? 0.22 : 0.7) + Math.random() * (lowEndBoot ? 0.42 : 1.5),
-            a: (lowEndBoot ? 0.018 : 0.04) + Math.random() * (lowEndBoot ? 0.035 : 0.11)
-        }));
-
-        let startTime = null;
-        let raf = null;
-        let bootWakeTimer = 0;
-        let stagePlayed = -1;
-        let titlePlayed = false;
-        let bloomPlayed = false;
-        const bootFrameMs = basicBoot ? 50 : (lowEndBoot ? 50 : 33);
-        const droneRef = SFX.introBed ? SFX.introBed() : SFX.bootDrone();
-        const staticBootBg = buildStaticBootBackground(lowEndBoot);
-
-        function clamp01(v) { return Math.max(0, Math.min(1, v)); }
-        function smooth(v) { v = clamp01(v); return v * v * (3 - 2 * v); }
-        function p(elapsed, start, dur) { return smooth((elapsed - start) / dur); }
-        function roundedRect(x, y, w, h, r) {
-            const rr = Math.min(r, w / 2, h / 2);
-            ctx.beginPath();
-            ctx.moveTo(x + rr, y);
-            ctx.arcTo(x + w, y, x + w, y + h, rr);
-            ctx.arcTo(x + w, y + h, x, y + h, rr);
-            ctx.arcTo(x, y + h, x, y, rr);
-            ctx.arcTo(x, y, x + w, y, rr);
-            ctx.closePath();
-        }
-        function buildStaticBootBackground(includeGrid) {
-            const bgCanvas = document.createElement('canvas');
-            bgCanvas.width = W;
-            bgCanvas.height = H;
-            const bgCtx = bgCanvas.getContext('2d');
-            const bg = bgCtx.createLinearGradient(0, 0, W, H);
-            bg.addColorStop(0, '#020506');
-            bg.addColorStop(0.44, '#050914');
-            bg.addColorStop(1, '#020302');
-            bgCtx.fillStyle = bg;
-            bgCtx.fillRect(0, 0, W, H);
-
-            const glow = bgCtx.createRadialGradient(cx, cy * 0.88, 0, cx, cy, Math.max(W, H) * 0.62);
-            glow.addColorStop(0, `rgba(${primRgb},${includeGrid ? 0.14 : 0.17})`);
-            glow.addColorStop(includeGrid ? 0.48 : 0.44, `rgba(${secRgb},${includeGrid ? 0.055 : 0.07})`);
-            glow.addColorStop(1, 'rgba(0,0,0,0)');
-            bgCtx.fillStyle = glow;
-            bgCtx.fillRect(0, 0, W, H);
-
-            if (includeGrid) {
-                bgCtx.save();
-                bgCtx.globalAlpha = 0.055;
-                bgCtx.strokeStyle = `rgb(${primRgb})`;
-                bgCtx.lineWidth = 1;
-                const grid = 72;
-                for (let x = 0; x < W + grid; x += grid) {
-                    bgCtx.beginPath(); bgCtx.moveTo(x, 0); bgCtx.lineTo(x, H); bgCtx.stroke();
-                }
-                for (let y = 0; y < H + grid; y += grid) {
-                    bgCtx.beginPath(); bgCtx.moveTo(0, y); bgCtx.lineTo(W, y); bgCtx.stroke();
-                }
-                bgCtx.restore();
-            }
-            return bgCanvas;
-        }
-
-        function drawBackground(elapsed) {
-            ctx.drawImage(staticBootBg, 0, 0, W, H);
-            if (lowEndBoot) {
-                particles.forEach(pt => {
-                    pt.y -= pt.s * 0.22;
-                    if (pt.y < -4) { pt.y = H + 4; pt.x = Math.random() * W; }
-                    ctx.save();
-                    ctx.globalAlpha = pt.a * 0.32;
-                    ctx.fillStyle = `rgba(${accRgb},0.8)`;
-                    ctx.beginPath();
-                    ctx.arc(pt.x, pt.y, Math.max(0.6, pt.r), 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                });
-                return;
-            }
-
-            ctx.save();
-            ctx.globalAlpha = 0.075;
-            ctx.strokeStyle = `rgb(${primRgb})`;
-            ctx.lineWidth = 1;
-            const grid = 54;
-            const offset = (elapsed * 0.018) % grid;
-            for (let x = -grid + offset; x < W + grid; x += grid) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-            }
-            for (let y = -grid + offset; y < H + grid; y += grid) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-            }
-            ctx.restore();
-
-            particles.forEach(pt => {
-                pt.y -= pt.s;
-                if (pt.y < -4) { pt.y = H + 4; pt.x = Math.random() * W; }
-                ctx.save();
-                ctx.globalAlpha = pt.a * (0.62 + 0.38 * Math.sin(elapsed * 0.002 + pt.x));
-                ctx.fillStyle = '#ffffff';
-                ctx.shadowColor = prim;
-                ctx.shadowBlur = mobileBoot ? 3 : 6;
-                ctx.beginPath();
-                ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
-        }
-
-        function drawStreaks(elapsed) {
-            const vis = p(elapsed, T.meshIn, 900) * (lowEndBoot ? 0.42 : 1);
-            if (vis <= 0) return;
-            ctx.save();
-            streaks.forEach(s => {
-                s.x += s.speed;
-                s.y -= s.speed * 0.24;
-                if (s.x - s.len > W || s.y < -40) {
-                    s.x = -s.len;
-                    s.y = Math.random() * H;
-                }
-                const grad = ctx.createLinearGradient(s.x, s.y, s.x + s.len, s.y - s.len * 0.24);
-                grad.addColorStop(0, 'rgba(0,0,0,0)');
-                grad.addColorStop(0.5, `rgba(${primRgb},${s.a * vis})`);
-                grad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(s.x, s.y);
-                ctx.lineTo(s.x + s.len, s.y - s.len * 0.24);
-                ctx.stroke();
-            });
-            ctx.restore();
-        }
-
-        function drawMesh(elapsed) {
-            const vis = p(elapsed, T.meshIn, 900) * (lowEndBoot ? 0.35 : 1);
-            if (vis <= 0) return;
-            ctx.save();
-            mesh.forEach(a => {
-                a.x += a.vx; a.y += a.vy;
-                if (a.x < -20) a.x = W + 20;
-                if (a.x > W + 20) a.x = -20;
-                if (a.y < -20) a.y = H + 20;
-                if (a.y > H + 20) a.y = -20;
-            });
-            for (let i = 0; i < mesh.length; i++) {
-                for (let j = i + 1; j < mesh.length; j++) {
-                    const a = mesh[i], b = mesh[j];
-                    const dx = a.x - b.x, dy = a.y - b.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const linkDist = lowEndBoot ? 130 : 180;
-                    if (dist > linkDist) continue;
-                    ctx.globalAlpha = (1 - dist / linkDist) * (lowEndBoot ? 0.08 : 0.16) * vis;
-                    ctx.strokeStyle = `rgb(${primRgb})`;
-                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-                }
-            }
-            mesh.forEach(pt => {
-                ctx.globalAlpha = (lowEndBoot ? 0.22 : 0.35) * vis;
-                ctx.fillStyle = sec;
-                ctx.shadowColor = sec;
-                ctx.shadowBlur = lowEndBoot ? 0 : (mobileBoot ? 5 : 10);
-                ctx.beginPath(); ctx.arc(pt.x, pt.y, lowEndBoot ? 1.4 : 2.2, 0, Math.PI * 2); ctx.fill();
-            });
-            ctx.restore();
-        }
-
-        function drawRails(elapsed) {
-            const vis = p(elapsed, T.railIn, 700);
-            if (vis <= 0) return;
-            const left = Math.max(24, W * 0.12);
-            const right = W - left;
-            const top = Math.max(72, H * 0.16);
-            const bottom = H - Math.max(72, H * 0.13);
-            ctx.save();
-            ctx.globalAlpha = vis;
-            ctx.strokeStyle = `rgba(${primRgb},0.28)`;
-            ctx.lineWidth = 1;
-            ctx.shadowColor = prim;
-            ctx.shadowBlur = lowEndBoot ? 0 : 10;
-            ctx.beginPath();
-            ctx.moveTo(left, top);
-            ctx.lineTo(left + 120 * vis, top);
-            ctx.moveTo(right, top);
-            ctx.lineTo(right - 120 * vis, top);
-            ctx.moveTo(left, bottom);
-            ctx.lineTo(left + 120 * vis, bottom);
-            ctx.moveTo(right, bottom);
-            ctx.lineTo(right - 120 * vis, bottom);
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawPremiumFrame(elapsed) {
-            const vis = p(elapsed, T.railIn, 900);
-            if (vis <= 0) return;
-            const pad = Math.max(18, Math.min(W, H) * 0.045);
-            ctx.save();
-            ctx.globalAlpha = 0.75 * vis;
-            ctx.strokeStyle = `rgba(${primRgb},0.13)`;
-            ctx.lineWidth = 1;
-            roundedRect(pad, pad, W - pad * 2, H - pad * 2, 12);
-            ctx.stroke();
-            ctx.font = '10px "Courier New", monospace';
-            ctx.fillStyle = `rgba(${accRgb},0.36)`;
-            ctx.textAlign = 'left';
-            ctx.fillText(bootCopy.frame.toUpperCase(), pad + 18, pad + 26);
-            ctx.textAlign = 'right';
-            ctx.globalAlpha *= 0.55;
-            ctx.beginPath();
-            ctx.moveTo(W - pad - 86, pad + 23);
-            ctx.lineTo(W - pad - 18, pad + 23);
-            ctx.strokeStyle = `rgba(${primRgb},0.34)`;
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawLogo(elapsed) {
-            const show = p(elapsed, T.logoIn, 900);
-            if (show <= 0) return;
-            const y = cy - 68;
-            const ring = lowEndBoot ? 82 + show * 10 : 82 + show * 22 + Math.sin(elapsed * 0.002) * 3;
-            ctx.save();
-            ctx.translate(cx, y);
-            ctx.globalAlpha = show;
-            ctx.shadowColor = prim;
-            ctx.shadowBlur = lowEndBoot ? 0 : (mobileBoot ? 14 : 24);
-            ctx.strokeStyle = `rgba(${primRgb},0.44)`;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            const spinA = lowEndBoot ? 0 : elapsed * 0.00016;
-            const spinB = lowEndBoot ? 0 : elapsed * 0.0002;
-            ctx.arc(0, 0, ring, -Math.PI * 0.12 + spinA, Math.PI * 1.62 + spinA);
-            ctx.stroke();
-            ctx.strokeStyle = `rgba(${secRgb},0.32)`;
-            ctx.beginPath();
-            ctx.arc(0, 0, ring + 19, Math.PI * 0.25 - spinB, Math.PI * 1.08 - spinB);
-            ctx.stroke();
-
-            const size = 46 + show * 20;
-            roundedRect(-size / 2, -size / 2, size, size, 15);
-            ctx.fillStyle = `rgba(${primRgb},0.09)`;
-            ctx.fill();
-            ctx.strokeStyle = `rgba(${primRgb},0.68)`;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-            ctx.font = '900 23px "Courier New", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = `rgb(${accRgb})`;
-            ctx.fillText(bootCopy.logo.slice(0, 8).toUpperCase(), 0, 1);
-            ctx.restore();
-        }
-
-        function drawStageText(elapsed) {
-            const totalP = clamp01(elapsed / T.endAt);
-            const active = Math.min(stages.length - 1, Math.floor(totalP * stages.length));
-            if (active > stagePlayed) {
-                stagePlayed = active;
-                if (SFX.introStep) SFX.introStep(active);
-                else SFX.loginTick();
-            }
-            const fade = p(elapsed, T.stagesIn, 650);
-            if (fade <= 0) return;
-            const w = Math.min(660, W * 0.78);
-            const h = W < 760 ? 82 : 96;
-            const x = cx - w / 2;
-            const y = H - Math.max(118, H * 0.17);
-            ctx.save();
-            ctx.globalAlpha = fade;
-            ctx.shadowColor = prim;
-            ctx.shadowBlur = lowEndBoot ? 0 : (mobileBoot ? 12 : 22);
-            roundedRect(x, y, w, h, 10);
-            const panel = ctx.createLinearGradient(x, y, x, y + h);
-            panel.addColorStop(0, 'rgba(255,255,255,0.055)');
-            panel.addColorStop(1, 'rgba(0,8,12,0.58)');
-            ctx.fillStyle = panel;
-            ctx.fill();
-            ctx.strokeStyle = `rgba(${primRgb},0.34)`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            ctx.font = '10px "Courier New", monospace';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = `rgba(${accRgb},0.54)`;
-            ctx.fillText(bootCopy.panel.toUpperCase(), x + 18, y + 24);
-            ctx.textAlign = 'right';
-            ctx.fillStyle = `rgba(${accRgb},0.72)`;
-            ctx.fillText(String(Math.floor(totalP * 100)).padStart(2, '0') + '%', x + w - 18, y + 24);
-
-            ctx.textAlign = 'left';
-            ctx.font = '700 13px "Courier New", monospace';
-            ctx.fillStyle = `rgba(${accRgb},0.92)`;
-            ctx.fillText(stages[active].toUpperCase(), x + 18, y + 48);
-
-            const barX = x + 18;
-            const barY = y + h - 25;
-            const barW = w - 36;
-            roundedRect(barX, barY, barW, 5, 3);
-            ctx.fillStyle = `rgba(${primRgb},0.16)`;
-            ctx.fill();
-            roundedRect(barX, barY, barW * totalP, 5, 3);
-            const grad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
-            grad.addColorStop(0, sec);
-            grad.addColorStop(0.55, '#ffffff');
-            grad.addColorStop(1, prim);
-            ctx.fillStyle = grad;
-            ctx.shadowColor = prim;
-            ctx.shadowBlur = lowEndBoot ? 0 : 16;
-            ctx.fill();
-            ctx.restore();
-        }
-
-        function drawTitle(elapsed) {
-            const show = p(elapsed, T.titleIn, 950);
-            if (show <= 0) return;
-            if (!titlePlayed && show > 0.35) {
-                titlePlayed = true;
-                if (SFX.introTitle) SFX.introTitle();
-                else SFX.bootTitleReveal();
-            }
-            const y = cy + 76 - (1 - show) * 18;
-            const fontSize = Math.min(W * 0.118, 92);
-            ctx.save();
-            ctx.globalAlpha = show;
-            ctx.font = `900 ${fontSize}px "Poppins", sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.shadowColor = prim;
-            ctx.shadowBlur = lowEndBoot ? 0 : (mobileBoot ? 10 : 18) * show;
-            const grad = ctx.createLinearGradient(cx - 240, y, cx + 240, y);
-            grad.addColorStop(0, sec);
-            grad.addColorStop(0.52, '#ffffff');
-            grad.addColorStop(1, prim);
-            if (!lowEndBoot) {
-                ctx.fillStyle = `rgba(${secRgb},0.26)`;
-                ctx.fillText(title, cx - 2.5, y + 1.5);
-                ctx.fillStyle = `rgba(${primRgb},0.26)`;
-                ctx.fillText(title, cx + 2.5, y - 1.5);
-            }
-            ctx.fillStyle = grad;
-            ctx.fillText(title, cx, y);
-            const subShow = p(elapsed, T.subtitleIn, 700);
-            ctx.shadowBlur = 0;
-            ctx.font = '11px "Courier New", monospace';
-            ctx.fillStyle = `rgba(${accRgb},${0.60 * subShow})`;
-            ctx.fillText(bootCopy.subline.toUpperCase(), cx, y + fontSize * 0.64);
-            ctx.restore();
-        }
-
-        function drawBloom(elapsed) {
-            const show = p(elapsed, T.bloom, 680);
-            if (show <= 0) return;
-            if (!bloomPlayed) {
-                bloomPlayed = true;
-                if (SFX.introBloom) SFX.introBloom();
-                else SFX.bootComplete();
-            }
-            ctx.save();
-            ctx.globalAlpha = (1 - show) * (lowEndBoot ? 0.34 : 0.58);
-            const r = show * Math.max(W, H) * 0.74;
-            const bloom = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-            bloom.addColorStop(0, 'rgba(255,255,255,0.84)');
-            bloom.addColorStop(0.22, `rgba(${primRgb},0.34)`);
-            bloom.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = bloom;
-            ctx.fillRect(0, 0, W, H);
-            ctx.restore();
-        }
-
-        function finish() {
-            if (SFX.stopDrone) SFX.stopDrone(droneRef);
-            triggerHaptic('success');
-            if (raf) cancelAnimationFrame(raf);
-            if (bootWakeTimer) clearTimeout(bootWakeTimer);
-            raf = null;
-            bootWakeTimer = 0;
-            canvas.style.transition = `opacity ${basicBoot ? 0.18 : (lowEndBoot ? 0.28 : (mobileBoot ? 0.42 : 0.75))}s ease`;
-            canvas.style.opacity = '0';
-            const subtextEl = document.getElementById('subtext');
-            if (subtextEl) subtextEl.style.opacity = '0';
-            const tg = document.getElementById('transition-glow');
-            if (tg) {
-                tg.style.pointerEvents = 'auto';
-                tg.classList.add('glow-expand');
-            }
-            setTimeout(() => {
-                canvas.remove();
-                if (subtextEl) subtextEl.remove();
-                const lv = document.getElementById('login-view');
-                if (lv) {
-                    lv.style.display = 'flex';
-                    lv.style.opacity = '0';
-                    lv.style.pointerEvents = 'none';
-                    void lv.offsetWidth;
-                }
-                setTimeout(() => {
-                    const tgEl = document.getElementById('transition-glow');
-                    if (tgEl) {
-                        tgEl.classList.add('glow-fade-out');
-                        tgEl.style.pointerEvents = 'none';
-                    }
-                    if (lv) {
-                        lv.style.transition = `opacity ${basicBoot ? 0.3 : 0.9}s ease-out`;
-                        lv.style.opacity = '1';
-                        lv.style.pointerEvents = 'auto';
-                    }
-                    loadLoginChangelogs();
-                    setTimeout(() => { const t = document.getElementById('transition-glow'); if (t) t.remove(); }, basicBoot ? 400 : 1000);
-                }, basicBoot ? 80 : 180);
-            }, basicBoot ? 140 : (lowEndBoot ? 220 : (mobileBoot ? 320 : 520)));
-        }
-
-        function scheduleBootFrame() {
-            if (bootFrameMs > 0) {
-                bootWakeTimer = setTimeout(() => {
-                    bootWakeTimer = 0;
-                    raf = requestAnimationFrame(render);
-                }, Math.max(8, bootFrameMs - 8));
-                return;
-            }
-            raf = requestAnimationFrame(render);
-        }
-
-        function render(ts) {
-            raf = null;
-            if (!startTime) startTime = ts;
-            const elapsed = ts - startTime;
-            drawBackground(elapsed);
-            drawStreaks(elapsed);
-            drawMesh(elapsed);
-            drawRails(elapsed);
-            drawPremiumFrame(elapsed);
-            drawLogo(elapsed);
-            drawStageText(elapsed);
-            drawTitle(elapsed);
-            drawBloom(elapsed);
-            if (elapsed < T.endAt) scheduleBootFrame();
-            else finish();
-        }
-
-        scheduleBootFrame();
-    }
-
-    function waitForIntroDb(maxWait = 2600) {
+    function waitForCmsDb(maxWait = 2600) {
         return new Promise(resolve => {
             const started = Date.now();
             const tick = () => {
@@ -1242,10 +693,10 @@
         });
     }
 
-    function preloadIntroCMS(maxWait = 2600) {
-        if (window.__introCmsReady) return window.__introCmsReady;
-        window.__introCmsReady = (async () => {
-            const dbReady = await waitForIntroDb(maxWait);
+    function preloadCMS(maxWait = 2600) {
+        if (window.__cmsReady) return window.__cmsReady;
+        window.__cmsReady = (async () => {
+            const dbReady = await waitForCmsDb(maxWait);
             if (!dbReady || !window.db_loadCMS) return false;
             try {
                 const cmsData = await window.db_loadCMS('main_portfolio');
@@ -1258,15 +709,15 @@
                 return false;
             }
         })();
-        return window.__introCmsReady;
+        return window.__cmsReady;
     }
 
     // ======================================================
-    // INIT OVERLAY — handles audio unlock + boot start
+    // Direct entry
     // ======================================================
     document.addEventListener('DOMContentLoaded', () => {
         initSystemWidgets();
-        const introCmsReady = preloadIntroCMS(2800);
+        preloadCMS(2800);
         if (window.applyTitleEditorData) applyTitleEditorData();
 
         // Apply saved mute icon state before audio is unlocked
@@ -1274,28 +725,17 @@
         const muteBtn = document.getElementById('muteBtn');
         if (muteBtn) muteBtn.textContent = savedMute ? '🔇' : '🔊';
 
-        const overlay = document.getElementById('init-overlay');
-        overlay.addEventListener('click', () => {
-            const profile = syncDeviceMotionProfile();
-            const basicIntro = profile.basic;
-            const lowEndIntro = profile.lowEnd;
-            SFX.init();
-            if (SFX.introTap) SFX.introTap(); else SFX.click();
-            overlay.style.transition = `opacity ${basicIntro ? 0.18 : (lowEndIntro ? 0.34 : 0.55)}s ease`;
-            overlay.style.opacity = '0';
-            setTimeout(async () => {
-                await Promise.race([
-                    introCmsReady || Promise.resolve(false),
-                    new Promise(resolve => setTimeout(resolve, basicIntro ? 220 : (lowEndIntro ? 460 : 1100)))
-                ]);
-                overlay.remove();
-                // Fade the boot canvas in from black.
-                const canvas = document.getElementById('boot-canvas');
-                if (canvas) { canvas.style.opacity = '0'; canvas.style.transition = `opacity ${basicIntro ? 0.18 : (lowEndIntro ? 0.28 : 0.5)}s ease`; }
-                startBootAnimation();
-                if (canvas) { void canvas.offsetWidth; setTimeout(() => { canvas.style.opacity = '1'; }, 30); }
-            }, basicIntro ? 220 : (lowEndIntro ? 360 : 600));
-        }, { once: true });
+        const loginView = document.getElementById('login-view');
+        if (loginView) {
+            loginView.style.display = 'flex';
+            loginView.style.opacity = '1';
+            loginView.style.pointerEvents = 'auto';
+        }
+
+        const unlockAudio = () => SFX.init();
+        document.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+        document.addEventListener('keydown', unlockAudio, { once: true, capture: true });
+        loadLoginChangelogs();
     });
 
     // ======================================================
@@ -1747,38 +1187,6 @@
         if (ioSubtitle) ioSubtitle.textContent = subtitle;
         if (heroTagEl) heroTagEl.textContent = heroTag;
 
-        const introDefaults = {
-            status1: title + ' v4.2',
-            status2: 'Portfolio ready',
-            status3: 'Sound unlock',
-            eyebrow: 'Personal webspace',
-            mark: 'JR',
-            title,
-            subcopy: 'Projects, games, notes, and experiments',
-            spec1: 'HTML/CSS',
-            spec2: 'JavaScript',
-            spec3: 'Roblox Studio',
-            enter: 'Tap to launch',
-            footer: 'Built by Josh // personal site'
-        };
-        const introMap = [
-            ['introStatus1Text', 'cms-intro-status-1', introDefaults.status1],
-            ['introStatus2Text', 'cms-intro-status-2', introDefaults.status2],
-            ['introStatus3Text', 'cms-intro-status-3', introDefaults.status3],
-            ['introEyebrowText', 'cms-intro-eyebrow', introDefaults.eyebrow],
-            ['introLogoMarkText', 'cms-intro-logo-mark', introDefaults.mark],
-            ['introLogoTitleText', 'cms-intro-title', introDefaults.title],
-            ['introSubcopyText', 'cms-intro-subcopy', introDefaults.subcopy],
-            ['introSpec1Text', 'cms-intro-spec-1', introDefaults.spec1],
-            ['introSpec2Text', 'cms-intro-spec-2', introDefaults.spec2],
-            ['introSpec3Text', 'cms-intro-spec-3', introDefaults.spec3],
-            ['introEnterText', 'cms-intro-enter', introDefaults.enter],
-            ['introFooterText', 'cms-intro-footer', introDefaults.footer]
-        ];
-        introMap.forEach(([id, key, fallback]) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = txt[key] || fallback;
-        });
 
         const tagDefaults = ['BSIT Student', 'Gamer', 'Frontend Learner', 'Learning Developer'];
         document.querySelectorAll('.hero-tags .htag').forEach((el, index) => {
@@ -1809,26 +1217,6 @@
         setTitleEditorValue('titleStartLineInput', txt['cms-hero-start-line'] || 'Personal Build');
         setTitleEditorValue('titleSubtitleInput', txt['cms-hero-subtitle'] || 'Student dev space');
         setTitleEditorValue('titleHeroTagInput', txt['cms-hero-tag'] || '> PERSONAL_BUILD // JOSHRTX_v4.2');
-        setTitleEditorValue('introStatus1Input', txt['cms-intro-status-1'] || ((txt['cms-hero-title'] || 'JoshRTX') + ' v4.2'));
-        setTitleEditorValue('introStatus2Input', txt['cms-intro-status-2'] || 'Portfolio ready');
-        setTitleEditorValue('introStatus3Input', txt['cms-intro-status-3'] || 'Sound unlock');
-        setTitleEditorValue('introEyebrowInput', txt['cms-intro-eyebrow'] || 'Personal webspace');
-        setTitleEditorValue('introLogoMarkInput', txt['cms-intro-logo-mark'] || 'JR');
-        setTitleEditorValue('introLogoTitleInput', txt['cms-intro-title'] || txt['cms-hero-title'] || 'JoshRTX');
-        setTitleEditorValue('introSubcopyInput', txt['cms-intro-subcopy'] || 'Projects, games, notes, and experiments');
-        setTitleEditorValue('introSpec1Input', txt['cms-intro-spec-1'] || 'HTML/CSS');
-        setTitleEditorValue('introSpec2Input', txt['cms-intro-spec-2'] || 'JavaScript');
-        setTitleEditorValue('introSpec3Input', txt['cms-intro-spec-3'] || 'Roblox Studio');
-        setTitleEditorValue('introEnterInput', txt['cms-intro-enter'] || 'Tap to launch');
-        setTitleEditorValue('introFooterInput', txt['cms-intro-footer'] || 'Built by Josh // personal site');
-        setTitleEditorValue('introBootFrameInput', txt['cms-intro-boot-frame'] || 'JOSHRTX.PORTFOLIO');
-        setTitleEditorValue('introBootLogoInput', txt['cms-intro-boot-logo'] || 'JR');
-        setTitleEditorValue('introBootPanelInput', txt['cms-intro-boot-panel'] || 'SYSTEM HANDOFF');
-        setTitleEditorValue('introBootSublineInput', txt['cms-intro-boot-subline'] || 'CODE / GAMES / PROJECTS');
-        setTitleEditorValue('introBootStage1Input', txt['cms-intro-boot-stage-1'] || 'Booting canvas');
-        setTitleEditorValue('introBootStage2Input', txt['cms-intro-boot-stage-2'] || 'Loading projects');
-        setTitleEditorValue('introBootStage3Input', txt['cms-intro-boot-stage-3'] || 'Tuning interface');
-        setTitleEditorValue('introBootStage4Input', txt['cms-intro-boot-stage-4'] || 'Opening portfolio');
         setTitleEditorValue('titleColorInput', txt['cms-hero-title-color'] || '');
         setTitleEditorValue('titleFontSizeInput', txt['cms-hero-title-font-size'] || '');
         setTitleEditorValue('titleLetterSpacingInput', txt['cms-hero-title-letter-spacing'] || '');
@@ -1862,26 +1250,6 @@
         txt['cms-hero-start-line'] = readTitleEditorValue('titleStartLineInput') || 'Personal Build';
         txt['cms-hero-subtitle'] = readTitleEditorValue('titleSubtitleInput') || 'Student dev space';
         txt['cms-hero-tag'] = readTitleEditorValue('titleHeroTagInput') || '> PERSONAL_BUILD // JOSHRTX_v4.2';
-        txt['cms-intro-status-1'] = readTitleEditorValue('introStatus1Input') || (txt['cms-hero-title'] + ' v4.2');
-        txt['cms-intro-status-2'] = readTitleEditorValue('introStatus2Input') || 'Portfolio ready';
-        txt['cms-intro-status-3'] = readTitleEditorValue('introStatus3Input') || 'Sound unlock';
-        txt['cms-intro-eyebrow'] = readTitleEditorValue('introEyebrowInput') || 'Personal webspace';
-        txt['cms-intro-logo-mark'] = readTitleEditorValue('introLogoMarkInput') || 'JR';
-        txt['cms-intro-title'] = readTitleEditorValue('introLogoTitleInput') || txt['cms-hero-title'];
-        txt['cms-intro-subcopy'] = readTitleEditorValue('introSubcopyInput') || 'Projects, games, notes, and experiments';
-        txt['cms-intro-spec-1'] = readTitleEditorValue('introSpec1Input') || 'HTML/CSS';
-        txt['cms-intro-spec-2'] = readTitleEditorValue('introSpec2Input') || 'JavaScript';
-        txt['cms-intro-spec-3'] = readTitleEditorValue('introSpec3Input') || 'Roblox Studio';
-        txt['cms-intro-enter'] = readTitleEditorValue('introEnterInput') || 'Tap to launch';
-        txt['cms-intro-footer'] = readTitleEditorValue('introFooterInput') || 'Built by Josh // personal site';
-        txt['cms-intro-boot-frame'] = readTitleEditorValue('introBootFrameInput') || 'JOSHRTX.PORTFOLIO';
-        txt['cms-intro-boot-logo'] = readTitleEditorValue('introBootLogoInput') || 'JR';
-        txt['cms-intro-boot-panel'] = readTitleEditorValue('introBootPanelInput') || 'SYSTEM HANDOFF';
-        txt['cms-intro-boot-subline'] = readTitleEditorValue('introBootSublineInput') || 'CODE / GAMES / PROJECTS';
-        txt['cms-intro-boot-stage-1'] = readTitleEditorValue('introBootStage1Input') || 'Booting canvas';
-        txt['cms-intro-boot-stage-2'] = readTitleEditorValue('introBootStage2Input') || 'Loading projects';
-        txt['cms-intro-boot-stage-3'] = readTitleEditorValue('introBootStage3Input') || 'Tuning interface';
-        txt['cms-intro-boot-stage-4'] = readTitleEditorValue('introBootStage4Input') || 'Opening portfolio';
         txt['cms-hero-title-color'] = readTitleEditorValue('titleColorInput');
         txt['cms-hero-title-font-size'] = readTitleEditorValue('titleFontSizeInput');
         txt['cms-hero-title-letter-spacing'] = readTitleEditorValue('titleLetterSpacingInput');
@@ -2566,7 +1934,6 @@
         cv.style.display = 'block';
         const ctx = cv.getContext('2d', { alpha: true, desynchronized: true });
         if (!ctx) return;
-        const bootLayer = document.getElementById('boot-canvas');
         const loadingLayers = Array.from(document.querySelectorAll('.loading-screen'));
 
         let W = 0, H = 0, paused = document.hidden, lastTs = 0, resizeTimer = null;
@@ -2585,7 +1952,7 @@
         }
 
         function coveredByTransition() {
-            return Boolean(bootLayer?.isConnected) || loadingLayers.some(layer => layer.classList.contains('active'));
+            return loadingLayers.some(layer => layer.classList.contains('active'));
         }
 
         function stopScheduler() {
