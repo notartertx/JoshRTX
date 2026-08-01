@@ -2767,9 +2767,18 @@ html.reduced-motion-device .avatar-scan::after {
     display: none !important;
 }
 
-/* Lightweight rendering remains available with ?basic=1. */
+/* Lightweight rendering is the permanent site profile. */
 html.basic-mode {
     scroll-behavior: auto;
+}
+
+html.basic-mode :is(
+    .cursor-settings-label,
+    .cursor-style-grid,
+    .cursor-style-status,
+    .premium-perf-toggle
+) {
+    display: none !important;
 }
 
 html.basic-mode body,

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-  <html lang="en">
+  <html lang="en" class="basic-mode">
   <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -9,28 +9,12 @@
       <script>
           (function() {
               const root = document.documentElement;
-              const basicEffects = new URLSearchParams(window.location.search).get('basic') === '1';
-              root.classList.toggle('basic-mode', basicEffects);
-              root.dataset.renderMode = basicEffects ? 'basic' : 'full';
+              root.classList.add('basic-mode', 'low-end-device');
+              root.dataset.renderMode = 'basic';
               const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-              const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-              const mem = Number(navigator.deviceMemory || 8);
-              const cores = Number(navigator.hardwareConcurrency || 8);
-              const dpr = window.devicePixelRatio || 1;
               const width = window.innerWidth || screen.width || 999;
-              const height = window.innerHeight || screen.height || 999;
-              const shortSide = Math.min(width, height);
               const mobile = coarse || width <= 768;
-              const lowEnd = basicEffects || reduced || (mobile && (mem <= 4 || cores <= 4 || (shortSide <= 430 && dpr >= 2.25)));
               if (mobile) root.classList.add('mobile-optimized-device');
-              if (lowEnd) root.classList.add('low-end-device');
-
-              if (!basicEffects) {
-                  const fontLink = document.createElement('link');
-                  fontLink.rel = 'stylesheet';
-                  fontLink.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Orbitron:wght@400;700;900&family=Playfair+Display:wght@400;700&family=Bebas+Neue&display=swap';
-                  document.head.appendChild(fontLink);
-              }
           })();
       </script>
 
@@ -41,7 +25,7 @@
       <link rel="stylesheet" href="assets/css/components.css">
       <link rel="stylesheet" href="assets/css/interactions.css">
       <link rel="stylesheet" href="assets/css/responsive.css">
-      <link rel="stylesheet" href="assets/css/premium.css?v=full-default-1">
+      <link rel="stylesheet" href="assets/css/premium.css?v=basic-only-1">
 
       <!-- Theme setup before first paint -->
       <script>
@@ -822,7 +806,7 @@
       <script src="assets/js/sfx.js"></script>
       <script src="assets/js/ui.js?v=top-settings-premium-1"></script>
       <script type="module" src="assets/js/firebase.js"></script>
-      <script src="assets/js/site-motion.js?v=full-default-1"></script>
+      <script src="assets/js/site-motion.js?v=basic-only-1"></script>
 
   </body>
   </html>
